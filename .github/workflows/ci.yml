@@ -1,0 +1,274 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── 基础构建 + 全量测试（RTMP/RTSP/HTTP，无 WebRTC/SRT）──────────────────
+  build-and-test:
+    name: Linux build + ctest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake libssl-dev pkg-config
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DZN_BUILD_EXAMPLES=ON \
+            -DZMS_BUILD_TESTS=ON \
+            -DZMS_ENABLE_WEBRTC=OFF \
+            -DZMS_ENABLE_SRT=OFF
+
+      - name: Build
+        run: cmake --build build --parallel "$(nproc)"
+
+      - name: Test
+        working-directory: build
+        run: ctest --output-on-failure --timeout 120
+
+  # ── WebRTC（WHEP/WHIP + DTLS/SRTP，含 zice）──────────────────────────────
+  build-webrtc:
+    name: Linux build + ctest (WebRTC)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake libssl-dev pkg-config
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DZN_BUILD_EXAMPLES=ON \
+            -DZMS_BUILD_TESTS=ON \
+            -DZMS_ENABLE_WEBRTC=ON
+
+      - name: Build
+        run: cmake --build build --parallel "$(nproc)"
+
+      - name: Test
+        working-directory: build
+        run: ctest --output-on-failure --timeout 120 -LE integration
+
+      # 端到端冒烟：真实起服务 + ffmpeg 推流 + FLV/HLS/WebAPI 验证。
+      # 单元测试覆盖不到「协议栈串起来是否可用」——历史多次是单测全绿、
+      # 真实链路却是坏的（HLS 卡死 / WebRTC 无音频 / G.711 爆音）。
+      - name: Install ffmpeg (for smoke)
+        run: sudo apt-get install -y --no-install-recommends ffmpeg
+
+      - name: Smoke test (integration)
+        working-directory: build
+        run: ctest --output-on-failure --timeout 180 -L integration
+
+  # ── ASan + UBSan：内存与未定义行为（本地曾两次因此类问题崩溃）─────────────
+  sanitizers:
+    name: ASan + UBSan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake libssl-dev pkg-config
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DZN_BUILD_EXAMPLES=ON \
+            -DZMS_BUILD_TESTS=ON \
+            -DZMS_ENABLE_WEBRTC=ON \
+            -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address,undefined"
+
+      - name: Build
+        run: cmake --build build --parallel "$(nproc)"
+
+      - name: Test (ASan + UBSan)
+        working-directory: build
+        env:
+          ASAN_OPTIONS: detect_leaks=1:abort_on_error=1:strict_string_checks=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: ctest --output-on-failure --timeout 180
+
+  # ── libFuzzer 冒烟：解析器（HTTP/RTSP/SIP/XML/RTMP）短时模糊测试 ──────────
+  fuzz:
+    name: libFuzzer (parsers smoke)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential clang libssl-dev pkg-config
+
+      - name: Configure (clang + sanitizers, whole build instrumented)
+        run: |
+          CC=clang cmake -S . -B build-fuzz \
+            -DZMS_BUILD_FUZZ=ON \
+            -DZMS_BUILD_TESTS=OFF \
+            -DZN_BUILD_EXAMPLES=OFF \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_C_COMPILER=clang \
+            -DCMAKE_C_FLAGS="-fsanitize=fuzzer-no-link,address,undefined -fno-omit-frame-pointer -g" \
+            -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=fuzzer-no-link,address,undefined"
+
+      - name: Build fuzz target
+        run: cmake --build build-fuzz --target fuzz_parsers --parallel "$(nproc)"
+
+      - name: Fuzz smoke (120s)
+        working-directory: build-fuzz/fuzz
+        env:
+          ASAN_OPTIONS: detect_leaks=0
+        run: ./fuzz_parsers -max_total_time=120 -rss_limit_mb=2048 ./../../fuzz/corpus
+
+  # ── 覆盖率：行覆盖报告（gcc --coverage），仅提示不设硬阈值 ──────────────
+  coverage:
+    name: Coverage (gcov)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake lcov libssl-dev pkg-config
+
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DZN_BUILD_EXAMPLES=OFF \
+            -DZMS_BUILD_TESTS=ON \
+            -DZMS_ENABLE_WEBRTC=ON \
+            -DCMAKE_C_FLAGS="--coverage -O0 -g" \
+            -DCMAKE_EXE_LINKER_FLAGS="--coverage"
+
+      - name: Build
+        run: cmake --build build --parallel "$(nproc)"
+
+      - name: Test
+        working-directory: build
+        run: ctest --output-on-failure --timeout 180
+
+      - name: gcov summary
+        run: |
+          cd build
+          lcov --capture --directory . --output-file coverage.info \
+               --ignore-errors mismatch,source,gcov 2>/dev/null || true
+          lcov --list coverage.info 2>/dev/null | tail -40 || echo "lcov summary unavailable"
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-info
+          path: build/coverage.info
+          if-no-files-found: ignore
+
+  # ── 代码整洁守卫：只检查「本次变更的文件」，不回溯历史代码 ────────────────
+  #
+  # 目的不是全量重排（那会产生巨大且无意义的 diff），而是在增量上防止
+  # 风格与约定继续漂移。基线是现有代码，新代码必须干净。
+  tidiness:
+    name: Tidiness (changed files only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 需要 diff 基线
+
+      - name: Collect changed C sources
+        id: changed
+        run: |
+          BASE="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE" 2>/dev/null; then
+            BASE=$(git rev-parse HEAD~1 2>/dev/null || git rev-parse HEAD)
+          fi
+          git diff --name-only --diff-filter=ACMR "$BASE" HEAD -- 'src/**/*.c' 'src/**/*.h' \
+              'include/**/*.h' 'tests/**/*.c' > /tmp/changed.txt || true
+          echo "count=$(wc -l < /tmp/changed.txt)" >> "$GITHUB_OUTPUT"
+          cat /tmp/changed.txt
+
+      - name: Install clang-format
+        if: steps.changed.outputs.count != '0'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang-format
+
+      - name: Check formatting of changed files
+        if: steps.changed.outputs.count != '0'
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            if ! clang-format --dry-run --Werror "$f" 2>/dev/null; then
+              echo "::error file=$f::clang-format 不通过（本地可跑: clang-format -i $f）"
+              fail=1
+            fi
+          done < /tmp/changed.txt
+          exit $fail
+
+      - name: Check forbidden patterns in changed files
+        if: steps.changed.outputs.count != '0'
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            [ -f "$f" ] || continue
+            # 1) TODO/FIXME 不允许进入主干（本仓库此前长期保持 0 处）
+            if grep -nE '\b(TODO|FIXME|XXX|HACK)\b' "$f"; then
+              echo "::error file=$f::禁止提交 TODO/FIXME 占位注释，请当场解决或建 issue"
+              fail=1
+            fi
+            # 2) 尾部空白
+            if grep -nE '[[:space:]]+$' "$f" | head -5; then
+              echo "::error file=$f::存在行尾空白"
+              fail=1
+            fi
+          done < /tmp/changed.txt
+          exit $fail
+
+      - name: Check zn_err_t return style
+        if: steps.changed.outputs.count != '0'
+        run: python3 tests/check_errno_style.py $(cat /tmp/changed.txt)
+
+      - name: Check base64 reimplementation ban
+        if: steps.changed.outputs.count != '0'
+        run: |
+          # 统一实现：include/zms/util/base64.h。禁止再自写一份。
+          if grep -n "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" \
+               $(cat /tmp/changed.txt) 2>/dev/null | grep -v 'src/util/base64.c'; then
+            echo "::error::检测到自实现 base64；请用 zms/util/base64.h"
+            exit 1
+          fi
+
+      - name: Health metrics (informational)
+        run: |
+          echo "### 仓库健康度" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- TODO/FIXME: $(grep -rE '\b(TODO|FIXME)\b' src include --include=*.c --include=*.h | wc -l)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 源文件: $(find src include -name '*.c' -o -name '*.h' | wc -l) / $(find src include -name '*.c' -o -name '*.h' | xargs cat | wc -l) 行" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 测试用例: $(ls tests/*.c | wc -l)" >> "$GITHUB_STEP_SUMMARY"
