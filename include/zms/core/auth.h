@@ -2,7 +2,7 @@
  * @file auth.h
  * @brief 推流/播放鉴权：上游签发 token，流媒体只做本地验签。
  *
- * 边界（见 docs/threading-auth-recording-model.md 第 2 节）：
+ * 边界（见 docs/stream-pipeline.md 第 3.2 节）：
  *   - 推流 app 与播放 app 先到 web 后台完成业务鉴权，后台签发带时效的 token，
  *     客户端把 token 放在协议 URL 的查询参数里发起推/拉流；
  *   - 流媒体进程只做**本地验签**：不解码业务身份、不查库、不回调 webhook；

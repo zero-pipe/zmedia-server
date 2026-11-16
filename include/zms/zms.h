@@ -8,7 +8,7 @@
  * 嵌入与插件宿主请用 zms/sdk.h（Stable），不要依赖本头的「全家桶」包含。
  * 进阶场景可优先使用领域聚合头：zms/live.h、zms/vod.h、zms/player.h、zms/protocol.h。
  *
- * 分层：docs/api-tiers.md
+ * 分层：docs/stream-pipeline.md
  *
  * Copyright (c) zero-media-server
  */

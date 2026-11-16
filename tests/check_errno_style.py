@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """检查 zn_err_t 函数的返回值风格。
 
-规则（见 docs/code-review-checklist.md 第 9 节）：
+规则（见 docs/stream-pipeline.md 第 7.1 节）：
   声明为 zn_err_t 的函数不得 `return -1`——zn_err_t 里 -1 是 ZN_ERR_NOMEM，
   裸 -1 会让调用方误判为内存不足。
 

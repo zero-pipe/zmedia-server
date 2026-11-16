@@ -2,7 +2,7 @@
 
 目录重构已完成。允许的依赖方向由 CMake 对象库与 port 头约束，
 跨层调用只允许经过声明的 port 头。完整的代码地图、加代码放哪、
-命名约定见 [`docs/structure.md`](../docs/structure.md)。
+命名约定见 [`docs/stream-pipeline.md`](../docs/stream-pipeline.md)。
 
 | 目录 | 职责 |
 |------|------|

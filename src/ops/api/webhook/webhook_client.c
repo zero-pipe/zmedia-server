@@ -2,7 +2,7 @@
  * @file webhook_client.c
  * @brief webhook 事件通知：非阻塞 HTTP POST，全部在主 poller 上完成。
  *
- * 线程模型（见 docs/threading-auth-recording-model.md）：
+ * 线程模型（见 docs/stream-pipeline.md）：
  *   - 任何线程都可以调用 zms_webhook_on_*：消息先打包成堆上任务，
  *     用 zn_poller_async 投递到主 poller；
  *   - 主 poller 上用 zn_tcp_client 做非阻塞连接/收发，超时用 zn_poller_do_delay；

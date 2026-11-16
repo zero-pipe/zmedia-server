@@ -83,7 +83,7 @@ zms_add_test(test_zm_dash)
 target_compile_definitions(test_zm_dash PRIVATE
     ZMS_FIXTURE_DIR="${PROJECT_SOURCE_DIR}/tests/fixtures")
 
-# 错误码风格检查（docs/code-review-checklist.md 第 9 节）：
+# 错误码风格检查（docs/stream-pipeline.md 第 7.1 节）：
 # zn_err_t 函数不得 return -1（-1 == ZN_ERR_NOMEM）。
 find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_Interpreter_FOUND)

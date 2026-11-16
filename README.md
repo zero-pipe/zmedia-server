@@ -114,10 +114,8 @@ int main(void)
 链接方式与 `demo_media_server` 相同：`zms` + `znet`。
 
 嵌入和 API 分层的细节以 `include/zms/sdk.h`、`include/zms/server.h`、
-`src/README.md` 以及头文件注释为准。文档分类与入口见
-[`docs/README.md`](docs/README.md)：代码地图与命名约定见
-[`docs/structure.md`](docs/structure.md)，线程/鉴权/录制模型见
-[`docs/threading-auth-recording-model.md`](docs/threading-auth-recording-model.md)。
+`src/README.md` 以及头文件注释为准。能力矩阵、URL 规则、线程/鉴权/录制约定、
+数据通路与安全传输，全部收在一份文档：[`docs/stream-pipeline.md`](docs/stream-pipeline.md)。
 
 ## 架构分层
 

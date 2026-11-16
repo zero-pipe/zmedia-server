@@ -28,7 +28,7 @@ RTSP / HTTP-FLV / HLS / DASH 地址播放。`--log file` 可同时写日志文�
 ./build/examples/demo_gb28181_device --config tests/gb28181/config.ini --seconds 60
 ```
 
-配置见 [`docs/gb28181-device.md`](../docs/gb28181-device.md)。
+配置见 [`docs/stream-pipeline.md`](../docs/stream-pipeline.md)。
 
 ## demo_onvif_probe
 

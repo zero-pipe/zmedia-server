@@ -2,7 +2,7 @@
  * @file dns_cache.h
  * @brief 主机名解析缓存：把 poller 上的重复 DNS 降到“每主机一次”。
  *
- * 背景（见 docs/threading-auth-recording-model.md）：poller 线程不允许做阻塞
+ * 背景（见 docs/stream-pipeline.md）：poller 线程不允许做阻塞
  * DNS。各拉流客户端连接时传主机名会让 `zn_socket_connect` 在 poller 上做
  * `getaddrinfo`。这里给一个进程内缓存：同一主机只解析一次，之后是纯内存查找。
  *
