@@ -5,7 +5,7 @@
 #ifndef ZMS_OPS_SERVICE_PULL_SSL_H
 #define ZMS_OPS_SERVICE_PULL_SSL_H
 
-#include "zms/ops/service/config.h"
+#include "zms/ops/config/config.h"
 #include "zms/zms_export.h"
 
 #ifdef __cplusplus

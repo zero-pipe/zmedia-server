@@ -13,7 +13,7 @@
 #include "zms/core/codec_filter.h"
 #include "zms/play/dispatch.h"
 #include "zms/session/webrtc/webrtc_server.h"
-#include "zms/ops/service/config.h"
+#include "zms/ops/config/config.h"
 #include "zms/util/buf_pool.h"
 #include "zn/net/tcp_server.h"
 #include "zn/util/log.h"

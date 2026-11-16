@@ -9,7 +9,7 @@
  * 文件点播源：已注册 VOD format demux → vod_buffer，供 RTSP/RTMP/HTTP-FLV（不复用 gop_queue）。
  */
 #include "zms/core/stream/hub.h"
-#include "zms/ops/service/config.h"
+#include "zms/ops/config/config.h"
 #include "zms/core/stream/buffer.h"
 #include "zms/zms_export.h"
 #include "zn/poller/poller.h"

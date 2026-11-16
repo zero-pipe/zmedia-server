@@ -7,7 +7,7 @@
 #include "zms/protocol/http/session_api.h"
 #include "session/webrtc/session_internal.h"
 #include "zms/session/webrtc/webrtc_server.h"
-#include "zms/ops/service/config.h"
+#include "zms/ops/config/config.h"
 #include "zn/net/tcp_server.h"
 #include "zn/util/log.h"
 #include <stdio.h>

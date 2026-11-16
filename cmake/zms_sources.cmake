@@ -197,9 +197,9 @@ set(ZMS_EGRESS_SOURCES
 
 set(ZMS_OPS_SOURCES
     src/ops/server/module_registry.c
-    src/ops/service/config.c
+    src/ops/config/config.c
     src/ops/server/zms_server.c
-    src/ops/service/pull_ssl.c
+    src/ops/config/pull_ssl.c
     src/ops/api/json/media_json.c
     src/ops/api/webapi/webapi.c
     src/ops/api/webapi/webapi_stats.c

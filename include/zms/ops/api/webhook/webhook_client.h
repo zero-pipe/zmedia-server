@@ -15,7 +15,7 @@
  * 推流/播放鉴权**不属于本模块**：业务鉴权在上游 web 后台完成并签发 token，
  * 流媒体只做本地验签，见 zms/core/auth.h。
  */
-#include "zms/ops/service/config.h"
+#include "zms/ops/config/config.h"
 #include "zms/zms_export.h"
 #include "zms/core/event.h"
 #include <stdint.h>

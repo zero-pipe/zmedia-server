@@ -9,7 +9,7 @@
 #define ZMS_OPS_API_WEBAPI_WEBAPI_INTERNAL_H
 
 #include "zms/ops/api/webapi/webapi.h"
-#include "zms/ops/service/config.h"
+#include "zms/ops/config/config.h"
 #include "zms/core/auth.h"
 #include "zms/core/event.h"
 #include "zms/device/onvif/onvif.h"

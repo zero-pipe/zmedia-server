@@ -24,7 +24,7 @@
 #include "zms/live.h"
 #include "zms/vod.h"
 #include "zms/player.h"
-#include "zms/ops/service/config.h"
+#include "zms/ops/config/config.h"
 #include "zms/ops/api/webapi/webapi.h"
 
 #endif /* ZMS_ZMS_H */

@@ -6,8 +6,8 @@
 #include "ops/api/webapi/webapi_internal.h"
 #include "zms/pull/proxy.h"
 #include "zms/protocol/rtp/ps_server.h"
-#include "zms/ops/service/config.h"
-#include "zms/ops/service/pull_ssl.h"
+#include "zms/ops/config/config.h"
+#include "zms/ops/config/pull_ssl.h"
 #if defined(ZMS_ENABLE_WEBRTC) && ZMS_ENABLE_WEBRTC
 #include "zms/session/webrtc/webrtc_server.h"
 #endif

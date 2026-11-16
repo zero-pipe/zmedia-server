@@ -2,8 +2,8 @@
  * @file pull_ssl.c
  * @brief 拉流 TLS 配置辅助。
  */
-#include "zms/ops/service/pull_ssl.h"
-#include "zms/ops/service/ssl_config.h"
+#include "zms/ops/config/pull_ssl.h"
+#include "zms/ops/config/ssl_config.h"
 #include "zn/net/ssl.h"
 #include <stdlib.h>
 

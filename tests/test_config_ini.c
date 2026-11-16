@@ -7,7 +7,7 @@
  *   - 代码新增了键却没写进模板（用户不知道有这个能力）
  * 本测试把两边钉死，防止再次漂移。
  */
-#include "zms/ops/service/config.h"
+#include "zms/ops/config/config.h"
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -4,7 +4,7 @@
  */
 #include "ops/api/webapi/webapi_internal.h"
 #include "zms/pull/proxy.h"
-#include "zms/ops/service/pull_ssl.h"
+#include "zms/ops/config/pull_ssl.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>

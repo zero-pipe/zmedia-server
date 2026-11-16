@@ -6,7 +6,7 @@
 #define ZMS_PUBLISH_INGEST_COMMON_PROTOCOL_OPTS_H
 
 #include "zms/zms_export.h"
-#include "zms/ops/service/config.h" /* zms_protocol_config */
+#include "zms/ops/config/config.h" /* zms_protocol_config */
 
 #ifdef __cplusplus
 extern "C" {

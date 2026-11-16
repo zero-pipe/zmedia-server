@@ -5,7 +5,7 @@
 #ifndef ZMS_OPS_SERVICE_SSL_CONFIG_H
 #define ZMS_OPS_SERVICE_SSL_CONFIG_H
 
-#include "zms/ops/service/config.h"
+#include "zms/ops/config/config.h"
 #include "zn/net/ssl.h"
 
 #ifdef __cplusplus

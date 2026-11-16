@@ -15,7 +15,7 @@
 #include "ops/api/webapi/onvif_api.h"
 #include "zms/core/stream/limits.h"
 #include "zms/device/onvif/onvif.h"
-#include "zms/ops/service/config.h"
+#include "zms/ops/config/config.h"
 #include "zms/device/onvif/onvif_registry.h"
 #include "zms/util/thread_pool.h"
 #include "zms/protocol/http/session_api.h"

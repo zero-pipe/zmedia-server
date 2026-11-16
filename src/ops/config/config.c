@@ -2,7 +2,7 @@
  * @file config.c
  * @brief config.ini 默认值与加载。
  */
-#include "zms/ops/service/config.h"
+#include "zms/ops/config/config.h"
 #include "zms/egress/pacing/egress_pacing.h"
 #include "zms/core/gop/limits.h"
 #include "zn/util/log.h"

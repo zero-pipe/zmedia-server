@@ -11,7 +11,7 @@
  * - stream：一路流；日期目录：当天切片；文件名：起录时分秒（同秒冲突加 _n）
  */
 #include "zms/core/stream/hub.h"
-#include "zms/ops/service/config.h"
+#include "zms/ops/config/config.h"
 #include "zms/zms_export.h"
 #include "zn/zn_errno.h"
 

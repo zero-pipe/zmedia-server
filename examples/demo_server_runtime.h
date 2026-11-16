@@ -9,7 +9,7 @@
  *   SIGTERM / SIGINT  → 设置 g_zms_stop = 1，wait() 返回，进程优雅退出
  *   SIGHUP            → reopen 日志文件（配合 logrotate 使用）
  */
-#include "zms/ops/service/config.h"
+#include "zms/ops/config/config.h"
 #include "zn/poller/poller_pool.h"
 #include "zn/zn_errno.h"
 

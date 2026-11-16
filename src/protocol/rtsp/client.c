@@ -14,7 +14,7 @@
 #include "protocol/rtsp/client_internal.h"
 #include "bridge/zm_rtp_ingest.h"
 #include "bridge/zm_zms_bridge.h"
-#include "zms/ops/service/zms_have_tls.h"
+#include "zms/ops/config/zms_have_tls.h"
 #include "zms/media/media_limits.h"
 #include "zms/core/gop/limits.h"
 #include "zms/protocol/rtsp/digest.h"

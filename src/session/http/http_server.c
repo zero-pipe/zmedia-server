@@ -6,7 +6,7 @@
 #include "zms/session/http/http_server.h"
 #include "zms/play/dispatch.h"
 #include "zms/protocol/http/websocket/framer.h"
-#include "zms/ops/service/config.h"
+#include "zms/ops/config/config.h"
 #include "zms/protocol/http/route.h"
 #include "zms/protocol/http/session_api.h"
 #include "session/http/session_internal.h"
@@ -16,7 +16,7 @@
 #include "zms/egress/mpegts/mpegts_egress.h"
 #if defined(ZMS_ENABLE_WEBRTC) && ZMS_ENABLE_WEBRTC
 #include "zms/session/webrtc/webrtc_server.h"
-#include "zms/ops/service/pull_ssl.h"
+#include "zms/ops/config/pull_ssl.h"
 #endif
 #include "zn/net/tcp_server.h"
 #include "zn/poller/poller_pool.h"

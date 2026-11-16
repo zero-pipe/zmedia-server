@@ -15,7 +15,7 @@
  */
 #include "zms/protocol/http/hls_client.h"
 #include "zms/util/dns_cache.h"
-#include "zms/ops/service/zms_have_tls.h"
+#include "zms/ops/config/zms_have_tls.h"
 #include "zms/media/codec/codec_id.h"
 #include "zms/media/clock.h"
 #include "mpeg-ts.h"

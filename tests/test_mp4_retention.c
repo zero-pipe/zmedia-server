@@ -4,7 +4,7 @@
  *        直接构造目录与文件，不依赖真实录制器。
  */
 #include "zms/egress/recorder/egress_mp4_recorder.h"
-#include "zms/ops/service/config.h"
+#include "zms/ops/config/config.h"
 
 #include <stdio.h>
 #include <string.h>

@@ -16,7 +16,7 @@
 #include "zms/protocol/rtmp/protocol.h"
 #include "zms/media/wire/amf.h"
 #include "protocol/rtmp/handshake_complex.h"
-#include "zms/ops/service/zms_have_tls.h"
+#include "zms/ops/config/zms_have_tls.h"
 #include "zms/util/buf_pool.h"
 #include "zn/net/tcp_client.h"
 #include "zn/net/tls_client.h"

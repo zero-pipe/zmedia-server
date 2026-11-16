@@ -19,7 +19,7 @@
  * 业务侧优先只依赖 sdk.h / 本头；协议与 GOP 等头属 Advanced/Internal。
  */
 #include "zms/core/event.h"
-#include "zms/ops/service/config.h"
+#include "zms/ops/config/config.h"
 #include "zms/zms_export.h"
 #include "zn/zn_errno.h"
 

@@ -3,7 +3,7 @@
  * @brief 缓冲区池（poller 本地池）。
  */
 #include "zms/util/buf_pool.h"
-#include "zms/ops/service/config.h"
+#include "zms/ops/config/config.h"
 #include "zn/poller/poller_pool.h"
 #include "zn/util/buf.h"
 #include "zn/util/log.h"
