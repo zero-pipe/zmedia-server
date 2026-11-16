@@ -1,6 +1,6 @@
 /**
  * @file sip_transport.c
- * @brief SIP 传输门面：UDP server / TCP client + Content-Length 分帧。
+ * @brief SIP 传输接口：UDP server / TCP client + Content-Length 分帧。
  */
 #include "device/core/sip_transport.h"
 #include "zms/util/dns_cache.h"
@@ -907,7 +907,7 @@ int zms_sip_transport_is_connected(const zms_sip_transport *t)
 }
 
 /*
- * 发送门面。四种模式路径：
+ * 发送接口。四种模式路径：
  *   - UDP：按 peer 地址 sendto，无连接状态；
  *   - TCP/TLS 服务端：在连接表里按 peer 精确找，找不到且只有一条连接就用它；
  *   - TCP/TLS 客户端：走各自的 connected 通道。

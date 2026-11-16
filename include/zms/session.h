@@ -3,9 +3,9 @@
 
 /**
  * @file session.h
- * @brief 服务端会话伞头：各协议的 server / session / 鉴权 / WHEP 门面。
+ * @brief 服务端会话聚合头：各协议的 server / session / 鉴权 / WHEP 接口。
  *
- * 与 zms/protocol.h（纯线协议编解码）成对：本头只聚合会话层对外门面，
+ * 与 zms/protocol.h（纯线协议编解码）成对：本头只聚合会话层对外接口，
  * 对应实现位于 src/session/<proto>/。
  */
 #include "zms/session/http/http_server.h"

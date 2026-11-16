@@ -3,7 +3,7 @@
 
 /**
  * @file zm.h
- * @brief ZM 共用媒体模型伞头。
+ * @brief ZM 共用媒体模型聚合头。
  */
 #include "zm/zm_export.h"
 #include "zm/core/types.h"

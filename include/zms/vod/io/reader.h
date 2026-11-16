@@ -3,7 +3,7 @@
 
 /**
  * @file reader.h
- * @brief 通用点播文件读取门面：磁盘容器 → vod_buffer。
+ * @brief 通用点播文件读取接口：磁盘容器 → vod_buffer。
  *
  * VOD 扩展边界。当前 MP4/MOV/MKV/FLV 由 file_reader 支撑；
  * 新文件容器应在此附着，勿将容器专用 reader 名泄漏到 play 代码。
@@ -36,12 +36,12 @@ typedef struct zms_vod_reader_opts {
 } zms_vod_reader_opts;
 
 /**
- * 打开一个文件点播读取门面（内部委托 file_reader，按扩展名选容器 demux）。
- * opts 中的 app/stream/fifo/source 等原样透传；内部 object 归门面所有。
+ * 打开一个文件点播读取接口（内部委托 file_reader，按扩展名选容器 demux）。
+ * opts 中的 app/stream/fifo/source 等原样透传；内部 object 归接口所有。
  * @return 成功返回 reader；参数为空或底层打开失败返回 NULL（用 close 释放）。
  */
 ZMS_API zms_vod_reader *zms_vod_reader_open(const zms_vod_reader_opts *opts);
-/** 关闭并释放门面及底层 file_reader；r 可为 NULL。调用后 r 不得再用。 */
+/** 关闭并释放接口及底层 file_reader；r 可为 NULL。调用后 r 不得再用。 */
 ZMS_API void zms_vod_reader_close(zms_vod_reader *r);
 /** 绑定 poller：之后由 poller 定时驱动 demux（而非同步 pump）。 */
 ZMS_API void zms_vod_reader_bind_poller(zms_vod_reader *r, zn_poller *poller);
@@ -56,7 +56,7 @@ ZMS_API void zms_vod_reader_prepare_play(zms_vod_reader *r);
  * @return 实际落点位置（ms）。
  */
 ZMS_API uint64_t zms_vod_reader_seek_ms(zms_vod_reader *r, uint64_t ms);
-/** 取门面对应的媒体源（借用，不转移所有权）。 */
+/** 取接口对应的媒体源（借用，不转移所有权）。 */
 ZMS_API zms_media_source *zms_vod_reader_source(zms_vod_reader *r);
 /** 打开时的磁盘路径；无则返回 NULL */
 ZMS_API const char *zms_vod_reader_file_path(const zms_vod_reader *r);

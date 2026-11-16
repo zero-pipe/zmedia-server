@@ -1,6 +1,6 @@
 /**
  * @file zms_server.c
- * @brief 媒体服务器门面：配置 / poller / 协议装配（自 demo_media_server 上收）。
+ * @brief 媒体服务器接口：配置 / poller / 协议装配（自 demo_media_server 上收）。
  */
 #include "zms/server.h"
 

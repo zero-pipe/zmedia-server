@@ -6,7 +6,7 @@
 #define ZMS_MEDIA_MEDIA_LIMITS_H
 
 /**
- * ZMS 媒体层策略常量（非线格式魔数）。
+ * ZMS 媒体层策略常量（非协议规范魔数）。
  * 协议字面量见 rtmp.h / rtp.h / h264_over_rtp.c 等。
  */
 

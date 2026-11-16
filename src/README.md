@@ -31,7 +31,7 @@ ZM 依赖 ZN 或 ZMS。
 
 ## 协议层边界
 
-协议 / 会话 / 业务归 ZMS，媒体格式与无状态线格式归 ZM。
+协议 / 会话 / 业务归 ZMS，媒体格式与无状态协议规范归 ZM。
 
 - RTMP：`protocol/rtmp/` 自研握手 / chunk / AMF / netconnection / netstream，ZM 不再带 `librtmp`。
 - RTSP：`protocol/rtsp/` 拥有方法 / 会话 / Transport / interleaved。
@@ -44,7 +44,7 @@ ZM 提供唯一的跨层对象：
 - `zm_packet`：ES 载荷 + PTS/DTS(ms) + codec/track + flags + `es_format`
 - `zm_mem`：与分配器解耦的载荷句柄；ZMS 用 `zn_buf` 零拷贝包装
 - `zm_track` / `zm_config`：归一化的 AVCC/HVCC/VVCC/AV1C/ASC/OpusHead
-- `zm_reader` / `zm_writer`：每个容器格式一个门面；codec 是数据，不是文件
+- `zm_reader` / `zm_writer`：每个容器格式一个接口；codec 是数据，不是文件
 - `zm_packager`：HLS/DASH 分段与清单
 
 **一个能力只有一个实现**：一个 FLV writer、一个 HLS packager、一个 TS muxer。
@@ -52,7 +52,7 @@ ZM 提供唯一的跨层对象：
 ## 头文件树
 
 `include/zms/` 与 `src/` 分层同构：`include/zms/<layer>/...`。`ZMS_API` 标注
-稳定导出符号；嵌入入口是 `zms/sdk.h`，领域伞头为 `zms/live.h`、`zms/vod.h`、
+稳定导出符号；嵌入入口是 `zms/sdk.h`，领域聚合头为 `zms/live.h`、`zms/vod.h`、
 `zms/player.h`、`zms/protocol.h`、`zms/zms.h`。
 
 ## 媒体路径
@@ -68,5 +68,5 @@ ZM 提供唯一的跨层对象：
 - 直播 DASH(fMP4)：`zm_dash_packager`（H.264/H.265 + AAC）；其他组合
   保留 legacy DASH 路径。
 - VOD 文件 demux：MP4/MOV 与 MKV 经 `zm_mov_reader` / `zm_mkv_reader`
-  门面（`src/bridge/zm_file_demuxer.c` 适配为 `zms_container` demuxer）；
-  FLV-file / MPEG 仍走旧 `zms_container` 文件 demuxer（ZM 门面暂缺 seek/config）。
+  接口（`src/bridge/zm_file_demuxer.c` 适配为 `zms_container` demuxer）；
+  FLV-file / MPEG 仍走旧 `zms_container` 文件 demuxer（ZM 接口暂缺 seek/config）。

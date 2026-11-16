@@ -1,6 +1,6 @@
 /**
  * @file test_zm_rtp.c
- * @brief RTP 门面往返：G711A payload pack -> RTP packet -> unpack -> zm_packet。
+ * @brief RTP 接口往返：G711A payload pack -> RTP packet -> unpack -> zm_packet。
  */
 #include "zm/transport/rtp.h"
 

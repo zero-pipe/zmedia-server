@@ -5,7 +5,7 @@
 #include "zms/play/dispatch.h"
 
 /**
- * HTTP-FLV 桩：play 挂接打开 egress_source；直播/点播 FLV muxer 负责线格式。
+ * HTTP-FLV 桩：play 挂接打开 egress_source；直播/点播 FLV muxer 负责协议规范。
  */
 static zn_err_t http_protocol_on_play_live(void *session, zms_media_source *src,
                                             const zms_session_play_opts *opts)

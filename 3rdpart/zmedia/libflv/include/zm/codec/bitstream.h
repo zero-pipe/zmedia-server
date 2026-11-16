@@ -3,9 +3,9 @@
 
 /**
  * @file bitstream.h
- * @brief 编解码位流 / config 门面：AVC / HEVC / VVC / AAC / AV1 / VPx。
+ * @brief 编解码位流 / config 接口：AVC / HEVC / VVC / AAC / AV1 / VPx。
  *
- * 门面导出 libflv 的 `mpeg4-*` 与 `aom-av1` / `webm-vpx` helper，
+ * 接口导出 libflv 的 `mpeg4-*` 与 `aom-av1` / `webm-vpx` helper，
  * 使宿主只依赖 `zm/codec/*`，而无需直接 include libflv 的 C 头。
  */
 #include "aom-av1.h"

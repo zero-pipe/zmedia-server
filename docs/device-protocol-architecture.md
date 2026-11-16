@@ -13,12 +13,12 @@
 
 ## 1. 设计原则
 
-1. **协议是适配器，不是内核**：ONVIF/GB28181 只负责线格式、鉴权、消息序；
+1. **协议是适配器，不是内核**：ONVIF/GB28181 只负责协议规范、鉴权、消息序；
    设备、通道、能力、会话、录像、事件全部进 `device_core`。
 2. **媒体路径不变**：仍走 `hub → gop_queue/VOD → PS/RTSP/RTP`；
    协议模块不维护流表（沿用 `docs/extensibility.md`）。
 3. **传输层统一**：SIP/HTTP/WSD/媒体 RTP 的 UDP/TCP/TLS、分帧、重连、保活
-   收敛到一层薄门面，底层优先复用 ZN；协议模块只面向「会话 + 帧」。
+   收敛到一层薄接口，底层优先复用 ZN；协议模块只面向「会话 + 帧」。
 4. **消息表驱动**：每条命令是表项（名称/方向/能力/处理函数），
    而不是散落的 `if (strcmp(CmdType, ...))`。
 5. **增量演进**：先抽接口和模型，行为保持不变；每步都能单独回归。
@@ -34,7 +34,7 @@
 │  device/channel registry · capability registry · session mgr │
 │  record index · event bus · command dispatch tables          │
 ├──────────────────────────────────────────────────────────────┤
-│ transport facade（薄门面）                                   │
+│ transport facade（薄接口）                                   │
 │  sip_transport(UDP/TCP/TLS) · http(TLS) · media_io(UDP/TCP)  │
 │  wsd multicast · framing(sip-content-length/rtp-tcp/http)    │
 ├──────────────────────────────────────────────────────────────┤
@@ -137,7 +137,7 @@ typedef struct zms_device_provider_ops {
 |------|------|----------|------|
 | M0 | 本文档 + 接口草案 + 一致性夹具（消息/能力矩阵） | 无 | 0.5–1 周 |
 | M1 | 抽 `device_core`（device/channel/capability/session/record index），ONVIF server 与 GB 设备端改为 adapter | 无（可回归对拍） | 1.5–2.5 周 |
-| M2 | transport facade：SIP 增加 TCP/TLS 选项；媒体 socket、WSD、HTTP 收敛到门面 | 可选能力新增 | 1–2 周 |
+| M2 | transport facade：SIP 增加 TCP/TLS 选项；媒体 socket、WSD、HTTP 收敛到接口 | 可选能力新增 | 1–2 周 |
 | M3 | 消息表驱动 + 共享 XML 层 + 能力统一宣告（ONVIF GetCapabilities / GB Catalog） | 无 | 1 周 |
 | M4 | `gb_platform`：进程内接受设备 REGISTER/MESSAGE/INVITE，复用 `ps_server`；与 Go 信令并行/替换 | 新角色 | 2–3 周 |
 | M5 | 事件/PTZ/录像统一：ONVIF Events/PTZ ↔ GB Alarm/PTZCmd ↔ 本地 provider | 能力增强 | 1–2 周 |

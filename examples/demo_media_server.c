@@ -1,5 +1,5 @@
 /**
- * ZMS 综合媒体服务（薄封装，逻辑在 zms_server 门面）。
+ * ZMS 综合媒体服务（薄封装，逻辑在 zms_server 接口）。
  *
  *   demo_media_server [--config config.ini] [--log file] [--seconds N]
  */

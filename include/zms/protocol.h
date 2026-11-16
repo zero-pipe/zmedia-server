@@ -3,7 +3,7 @@
 
 /**
  * @file protocol.h
- * @brief RTSP / RTP / RTMP / HTTP / SRT 协议栈伞头。
+ * @brief RTSP / RTP / RTMP / HTTP / SRT 协议栈聚合头。
  */
 #include "zms/core/frame.h"
 #include "zms/core/media_track.h"
@@ -27,7 +27,7 @@
 #include "zms/protocol/srt/srt_server.h"
 #include "zms/protocol/srt/streamid.h"
 
-/* 服务端会话门面（*_server.h / session.h / session_auth.h / whep.h）已归位到
- * zms/session.h 伞头；本头只保留纯线协议编解码。 */
+/* 服务端会话接口（*_server.h / session.h / session_auth.h / whep.h）已归位到
+ * zms/session.h 聚合头；本头只保留纯线协议编解码。 */
 
 #endif /* ZMS_PROTOCOL_H */

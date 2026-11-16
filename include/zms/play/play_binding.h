@@ -3,7 +3,7 @@
 
 /**
  * @file play_binding.h
- * @brief 播放侧窄门面：reader 记账 + egress_source/lane 拆除。
+ * @brief 播放侧窄接口：reader 记账 + egress_source/lane 拆除。
  *
  * 不拥有协议线路 muxer（FLV/TS/RTP）。会话保留后者并调用本模块处理
  * 重复的 close / reader_add|remove / media_event_stop 路径。

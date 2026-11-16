@@ -1,6 +1,6 @@
 /**
  * @file test_zm_mpeg.c
- * @brief MPEG-TS / PS 门面往返：G711A -> mux -> demux -> zm_packet。
+ * @brief MPEG-TS / PS 接口往返：G711A -> mux -> demux -> zm_packet。
  */
 #include "zm/format/mpeg.h"
 

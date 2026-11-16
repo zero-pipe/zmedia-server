@@ -3,7 +3,7 @@
 
 /**
  * @file h265_config.h
- * @brief H.265 参数集配置门面（基于 zm libflv mpeg4_hevc_t）。
+ * @brief H.265 参数集配置接口（基于 zm libflv mpeg4_hevc_t）。
  *
  * 使业务/播放层无需包含 `mpeg4-hevc.h`。以稳定地址按值持有 `zms_hevc_config` 并传其指针；
  * 加载后切勿拷贝（库结构体内指针指向自有缓冲）。

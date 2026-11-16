@@ -7,15 +7,15 @@
 
 ```text
 include/zms/
-  sdk.h           嵌入 / 插件宿主的唯一推荐入口（Stable 伞头）
-  server.h        服务器门面
+  sdk.h           嵌入 / 插件宿主的唯一推荐入口（Stable 聚合头）
+  server.h        服务器接口
   version.h       版本宏
   zms_export.h    ZMS_API / ZMS_LOCAL 导出宏
-  live.h          领域伞头：直播入站、代理拉流、通用 codec/容器适配
-  vod.h           领域伞头：VOD reader、play lane、HTTP-FLV
-  player.h        领域伞头：远端拉流播放器
-  protocol.h      领域伞头：RTSP / RTMP / HTTP / SRT 协议栈
-  zms.h           全量伞头（demo / 内部方便用）
+  live.h          领域聚合头：直播入站、代理拉流、通用 codec/容器适配
+  vod.h           领域聚合头：VOD reader、play lane、HTTP-FLV
+  player.h        领域聚合头：远端拉流播放器
+  protocol.h      领域聚合头：RTSP / RTMP / HTTP / SRT 协议栈
+  zms.h           全量聚合头（demo / 内部方便用）
   core/ media/ bridge/ protocol/ publish/ play/ vod/ pull/ egress/ ops/ util/   与 src/ 一一对应
 ```
 
@@ -30,11 +30,11 @@ include/zms/
   符号，不进共享库 ABI。
 - 头文件路径本身不承诺稳定；`sdk.h` / `server.h` 及其直接依赖最稳定。
 
-## 3. 领域伞头
+## 3. 领域聚合头
 
 按使用场景聚合，而不是按实现目录聚合：
 
-| 伞头 | 典型使用者 | 内容 |
+| 聚合头 | 典型使用者 | 内容 |
 |------|-----------|------|
 | `zms/sdk.h` | 嵌入式宿主 | server、version、export |
 | `zms/live.h` | 直播接入/分发 | ingest、proxy、codec 适配器 |

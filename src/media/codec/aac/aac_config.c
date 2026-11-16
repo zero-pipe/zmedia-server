@@ -1,6 +1,6 @@
 /**
  * @file aac_config.c
- * @brief AAC 配置门面实现（封装 zm libflv mpeg4_aac_t）。
+ * @brief AAC 配置接口实现（封装 zm libflv mpeg4_aac_t）。
  *
  * Copyright (c) zero-media-server
  */

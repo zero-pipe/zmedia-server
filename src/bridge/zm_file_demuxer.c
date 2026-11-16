@@ -6,7 +6,7 @@
  * `zms_container_demuxer_ops`，供 VOD 文件读取使用：
  *  - open_file 时把 `zm_track.config` 合成为 config 包；
  *  - pump 每次拉一个 `zm_packet`（视频已是 Annex-B）转成 sample 包；
- *  - seek 走门面的 `zm_reader_seek`。
+ *  - seek 走接口的 `zm_reader_seek`。
  * MPEG 仍由旧路径处理。
  */
 #include "zms/media/container/container_registry.h"

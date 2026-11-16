@@ -3,7 +3,7 @@
 
 /**
  * @file mkv.h
- * @brief Matroska 的 ZM reader 门面（pull 模式，需要可 seek 的 zm_io）。
+ * @brief Matroska 的 ZM reader 接口（pull 模式，需要可 seek 的 zm_io）。
  *
  * 视频样本在 reader 边界统一转成 Annex-B；AAC/Opus 保持 raw。
  */
@@ -11,7 +11,7 @@
 #include "zm/core/reader.h"
 #include "zm/core/writer.h"
 
-/* 门面同时导出 MKV 文件缓冲接口（mkv_buffer_t）。 */
+/* 接口同时导出 MKV 文件缓冲接口（mkv_buffer_t）。 */
 #include "mkv-buffer.h"
 
 #ifdef __cplusplus

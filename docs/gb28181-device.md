@@ -33,7 +33,7 @@
 ## 2. 代码位置
 
 ```
-include/zms/device/gb28181/gb28181.h     公共门面（start/stop/alarm/channels）
+include/zms/device/gb28181/gb28181.h     公共接口（start/stop/alarm/channels）
 src/device/gb28181/
   gb28181_internal.h                     内部共享结构
   gb_sip.c                               SIP 解析/构造 + Digest

@@ -1,6 +1,6 @@
 /**
  * @file vod.h
- * @brief 领域伞头：VOD reader、play lane 与 HTTP-FLV。
+ * @brief 领域聚合头：VOD reader、play lane 与 HTTP-FLV。
  */
 #ifndef ZMS_VOD_H
 #define ZMS_VOD_H

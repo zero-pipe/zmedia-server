@@ -3,7 +3,7 @@
 
 /**
  * @file rtp.h
- * @brief RTP 作为 transport-codec 的 reader/writer 门面。
+ * @brief RTP 作为 transport-codec 的 reader/writer 接口。
  *
  * reader：输入 RTP/RTCP 包，输出 zm_packet；
  * writer：输入 zm_packet，输出完整 RTP 包到 sink。
@@ -12,7 +12,7 @@
 #include "zm/core/reader.h"
 #include "zm/core/writer.h"
 
-/* 门面同时导出 RTP/RTCP 包格式与 payload 编解码 helper，使宿主只依赖
+/* 接口同时导出 RTP/RTCP 包格式与 payload 编解码 helper，使宿主只依赖
  * zm/transport/rtp.h，而无需直接 include librtp 的 C 头。 */
 #include "rtp-demuxer.h"
 #include "rtp-packet.h"

@@ -3,7 +3,7 @@
 
 /**
  * @file server.h
- * @brief ZMS 媒体服务器门面（Stable SDK 主入口之一）。
+ * @brief ZMS 媒体服务器接口（Stable SDK 主入口之一）。
  *
  * 嵌入推荐：#include "zms/sdk.h"（本头由 sdk.h 包含）。
  * 分层：docs/api-tiers.md · 指南：docs/integrator-guide.md

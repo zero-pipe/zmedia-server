@@ -22,7 +22,7 @@ device（GB28181 / ONVIF 设备与平台角色）依赖 core/media/protocol/sess
   编解码，不认识会话状态；`session/<p>/` 放会话状态机、业务分发与发送节拍。
   WebRTC 的 ICE 通过 `protocol/webrtc/ice_host.h` 与会话交互，不反向包含会话头。
 - **ZM/ZN 边界**：`media/` 与 `bridge/` 是 ZM 适配层；`egress/`、`play/`
-  只允许通过 `zm/*` 门面（packager / format / transport）使用 ZM。
+  只允许通过 `zm/*` 接口（packager / format / transport）使用 ZM。
   裸 ZM C 头目前只允许出现在 `bridge/`；`protocol/`、`session/`、`publish/`、`vod/`、
   `pull/`、`core/`、`ops/` 不得直接依赖 ZM。存量越界按 P1 逐层收敛。
 - 依赖方向由 CMake 对象库与 port 头约束，新增越界应在评审中拦截。
@@ -52,10 +52,10 @@ src/
 
 `include/zms/` 与 `src/` 一一对应（单一头文件树，无 `advanced/`）。
 
-- 服务端会话门面（`*_server.h`、`rtmp/session.h`、`rtsp/session_auth.h`、
+- 服务端会话接口（`*_server.h`、`rtmp/session.h`、`rtsp/session_auth.h`、
   `webrtc/whep.h`）位于 `include/zms/session/`，对应 `src/session/<proto>/`。
   对应的 `include/zms/protocol/<proto>/<同名>` 仅保留一行兼容 shim，新代码请用
-  `zms/session/...`。`zms/session.h` 是会话层伞头，`zms/protocol.h` 只留线协议编解码。
+  `zms/session/...`。`zms/session.h` 是会话层聚合头，`zms/protocol.h` 只留线协议编解码。
 - `src/message/`（原 `src/proto/`）承载跨协议报文外壳与 XML 助手；避免与
   `src/protocol/` 近名混淆。
 
@@ -77,7 +77,7 @@ src/
 - **文件**：`<area>_<part>.c`，例如 `session_play.c`、`rtp_payload_muxer.c`、
   `handshake_complex.c`。避免缩写（`hs_`、`rtp_over_rtsp` 这类已清理）。
 - **协议目录内**：`protocol/<p>/` 放 `<p>_session*.c` 会话状态机；`client.c` 客户端；
-  `*_server.c` 对外门面；`parser.c`/`dispatch.c` 输入解析与分发。
+  `*_server.c` 对外接口；`parser.c`/`dispatch.c` 输入解析与分发。
   `session/<p>/` 与 `protocol/<p>/` 同名成对，前者业务、后者编解码。
 - **内部头**：`*_internal.h` 只给同目录/同层使用；port 头才是跨层契约。
   port 头按拥有方命名，允许同名（如 `play/vod_play_port.h` 与

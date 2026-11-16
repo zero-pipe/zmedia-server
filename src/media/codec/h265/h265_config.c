@@ -1,6 +1,6 @@
 /**
  * @file h265_config.c
- * @brief H.265 配置门面实现（封装 zm libflv mpeg4_hevc_t）。
+ * @brief H.265 配置接口实现（封装 zm libflv mpeg4_hevc_t）。
  *
  * Copyright (c) zero-media-server
  */

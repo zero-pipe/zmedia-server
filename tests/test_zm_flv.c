@@ -1,6 +1,6 @@
 /**
  * @file test_zm_flv.c
- * @brief FLV reader/writer 门面一致性：tag body 往返、AAC config 归一化、完整 tag 输出。
+ * @brief FLV reader/writer 接口一致性：tag body 往返、AAC config 归一化、完整 tag 输出。
  */
 #include "zm/format/flv.h"
 

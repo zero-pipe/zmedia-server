@@ -1,6 +1,6 @@
 /**
  * @file protocol_util.c
- * @brief RTMP 线格式字节序读写辅助。
+ * @brief RTMP 协议规范字节序读写辅助。
  */
 #include "protocol/rtmp/protocol_internal.h"
 

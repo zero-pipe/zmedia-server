@@ -3,7 +3,7 @@
 
 /**
  * @file aac_config.h
- * @brief AAC 配置门面（基于 zm libflv mpeg4_aac_t 解析器）。
+ * @brief AAC 配置接口（基于 zm libflv mpeg4_aac_t 解析器）。
  *
  * 使业务/播放/容器层无需包含 `mpeg4-aac.h`：调用方按值持有 `zms_aac_config`，
  * 播种默认值 / 加载 AudioSpecificConfig，再序列化 ASC 或 ADTS 头而无需触碰原始库结构体。

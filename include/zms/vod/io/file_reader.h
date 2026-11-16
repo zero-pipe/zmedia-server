@@ -34,7 +34,7 @@ typedef struct zms_vod_file_reader_opts {
     int loop;
     /** 未消费 fifo 深度超过此值时暂停 demux。 */
     size_t fifo_high_water;
-    /** 可选门面所有者，存入 zms_media_source::publisher_ctx。 */
+    /** 可选接口所有者，存入 zms_media_source::publisher_ctx。 */
     void *owner_ctx;
 } zms_vod_file_reader_opts;
 

@@ -1,6 +1,6 @@
 /**
  * @file protocol.h
- * @brief RTMP 协议门面（握手/chunk/命令/发送）。
+ * @brief RTMP 协议接口（握手/chunk/命令/发送）。
  */
 #ifndef ZMS_PROTOCOL_RTMP_PROTOCOL_H
 #define ZMS_PROTOCOL_RTMP_PROTOCOL_H

@@ -1,12 +1,12 @@
 /**
  * @file wire_format.h
- * @brief 线格式通用定义（FLV/RTP 消息类型等）。
+ * @brief 协议规范通用定义（FLV/RTP 消息类型等）。
  */
 #ifndef ZMS_MEDIA_WIRE_FORMAT_H
 #define ZMS_MEDIA_WIRE_FORMAT_H
 
 /**
- * 播放出站或载荷解复用使用的线格式（与 zms_codec_id 正交）。
+ * 播放出站或载荷解复用使用的协议规范（与 zms_codec_id 正交）。
  */
 
 #ifdef __cplusplus

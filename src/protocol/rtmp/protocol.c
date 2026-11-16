@@ -1,6 +1,6 @@
 /**
  * @file protocol.c
- * @brief RTMP 协议对象生命周期与对外门面（create/input/send）。
+ * @brief RTMP 协议对象生命周期与对外接口（create/input/send）。
  */
 #include "zms/protocol/rtmp/protocol.h"
 #include "protocol/rtmp/protocol_internal.h"

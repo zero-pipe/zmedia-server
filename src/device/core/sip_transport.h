@@ -1,6 +1,6 @@
 /**
  * @file sip_transport.h
- * @brief SIP 传输门面：UDP / TCP（后续 TLS），统一分帧与收发。
+ * @brief SIP 传输接口：UDP / TCP（后续 TLS），统一分帧与收发。
  *
  * 设备端当前使用「UDP 监听」或「TCP 客户端」；分帧规则为 SIP
  * Content-Length。底层复用 ZN（udp_server / tcp_client），协议层不直接碰 socket。

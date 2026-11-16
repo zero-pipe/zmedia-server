@@ -1,6 +1,6 @@
 /**
  * @file hls_fmp4.c
- * @brief fMP4 分片 muxer 门面实现（封装 zm libhls hls_fmp4）。
+ * @brief fMP4 分片 muxer 接口实现（封装 zm libhls hls_fmp4）。
  *
  * Copyright (c) zero-media-server
  */

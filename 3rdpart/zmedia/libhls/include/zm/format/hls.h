@@ -3,7 +3,7 @@
 
 /**
  * @file hls.h
- * @brief HLS 门面：分段、清单与 fMP4 打包（导出 libhls 的 helper）。
+ * @brief HLS 接口：分段、清单与 fMP4 打包（导出 libhls 的 helper）。
  */
 #include "hls-fmp4.h"
 #include "hls-media.h"

@@ -1,6 +1,6 @@
 /**
  * @file hls_playlist.c
- * @brief M3U8 播放列表门面实现（封装 zm libhls hls_m3u8）。
+ * @brief M3U8 播放列表接口实现（封装 zm libhls hls_m3u8）。
  *
  * Copyright (c) zero-media-server
  */

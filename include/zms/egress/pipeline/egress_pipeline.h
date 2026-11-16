@@ -3,7 +3,7 @@
 
 /**
  * @file egress_pipeline.h
- * @brief 统一出站泵：读帧并输出线格式字节。
+ * @brief 统一出站泵：读帧并输出协议规范字节。
  *
  * 经 zms_egress_source 附着读者。直播/VOD pacing 见 egress_pacing.h。
  * 线路径：RTP（RTSP/WebRTC）、FLV tag（RTMP/HTTP-FLV）。

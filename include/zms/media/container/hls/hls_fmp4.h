@@ -3,10 +3,10 @@
 
 /**
  * @file hls_fmp4.h
- * @brief fMP4（CMAF）分片 muxer 门面（基于 zm libhls hls_fmp4 API）。
+ * @brief fMP4（CMAF）分片 muxer 接口（基于 zm libhls hls_fmp4 API）。
  *
  * 使播放/业务层无需包含 `hls-fmp4.h` 与 `mov-format.h`：按 zms_codec_id 添加轨，
- * 以 ZMS flag 位喂样本，门面映射到底层 MOV_OBJECT_* / MOV_AV_FLAG_*。
+ * 以 ZMS flag 位喂样本，接口映射到底层 MOV_OBJECT_* / MOV_AV_FLAG_*。
  */
 #include "zms/zms_export.h"
 #include "zms/media/codec/codec_id.h"

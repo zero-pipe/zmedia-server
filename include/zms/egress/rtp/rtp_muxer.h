@@ -3,7 +3,7 @@
 
 /**
  * @file rtp_muxer.h
- * @brief ES / gop_queue 槽位打成 RTP 包（出站线格式）。
+ * @brief ES / gop_queue 槽位打成 RTP 包（出站协议规范）。
  *
  * 打包器：src/egress/rtp/rtp_payload_muxer.c（内部用 zm_rtp_writer）。
  * RTSP 会话拥有 TCP interleaved 发送；本模块经回调输出 RTP。

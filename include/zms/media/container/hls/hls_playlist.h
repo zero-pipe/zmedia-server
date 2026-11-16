@@ -3,7 +3,7 @@
 
 /**
  * @file hls_playlist.h
- * @brief M3U8 播放列表生成门面（基于 zm libhls hls_m3u8 API）。
+ * @brief M3U8 播放列表生成接口（基于 zm libhls hls_m3u8 API）。
  *
  * 使播放/业务层无需包含 `hls-m3u8.h`；HLS maker 经本薄封装驱动 EXT-X-MAP /
  * 分片条目 / 列表渲染。

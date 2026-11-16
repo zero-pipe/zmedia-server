@@ -1,6 +1,6 @@
 /**
  * @file flv_wire.c
- * @brief FLV header / tag 线格式写出。
+ * @brief FLV header / tag 协议规范写出。
  */
 #include "zms/media/container/flv/flv_wire.h"
 #include "zm/format/flv.h"

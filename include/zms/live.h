@@ -1,6 +1,6 @@
 /**
  * @file live.h
- * @brief 领域伞头：直播入站、代理拉流与 codec/容器适配。
+ * @brief 领域聚合头：直播入站、代理拉流与 codec/容器适配。
  */
 #ifndef ZMS_LIVE_H
 #define ZMS_LIVE_H

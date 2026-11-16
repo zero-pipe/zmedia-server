@@ -1,6 +1,6 @@
 /**
  * @file player.h
- * @brief 领域伞头：远端拉流播放器。
+ * @brief 领域聚合头：远端拉流播放器。
  */
 #ifndef ZMS_PLAYER_H
 #define ZMS_PLAYER_H

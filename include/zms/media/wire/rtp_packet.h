@@ -5,7 +5,7 @@
  * @file rtp_packet.h
  * @brief RFC 3550 RTP 头解析与 RTSP interleaved 成帧（$ + channel + len）。
  *
- * 仅线格式（RFC 3550 + RTSP interleaved 成帧）。
+ * 仅协议规范（RFC 3550 + RTSP interleaved 成帧）。
  * 编解码载荷 demux 位于 media/codec/*_over_rtp。
  * 置于 session/ 之外，避免 media/payload 依赖 session。
  */

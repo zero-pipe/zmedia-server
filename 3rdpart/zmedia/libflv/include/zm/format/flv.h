@@ -3,7 +3,7 @@
 
 /**
  * @file flv.h
- * @brief FLV/RTMP 的 ZM reader/writer 门面。
+ * @brief FLV/RTMP 的 ZM reader/writer 接口。
  *
  * reader：输入已拆好的 FLV tag body（RTMP 路径），输出 zm_packet；
  * writer：输入 zm_packet，输出 FLV tag body（RTMP）或完整 tag（HTTP-FLV）。
@@ -11,7 +11,7 @@
 #include "zm/core/reader.h"
 #include "zm/core/writer.h"
 
-/* 门面同时导出 FLV 线格式（tag 头读写、类型/codec 常量），
+/* 接口同时导出 FLV 协议规范（tag 头读写、类型/codec 常量），
  * 使宿主只依赖 zm/format/flv.h，而无需直接 include libflv 的 C 头。 */
 #include "flv-demuxer.h"
 #include "flv-header.h"

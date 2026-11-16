@@ -3,7 +3,7 @@
 
 /**
  * @file flv_wire.h
- * @brief FLV 线格式辅助：文件头与完整 tag（libflv）。
+ * @brief FLV 协议规范辅助：文件头与完整 tag（libflv）。
  */
 #include "zms/zms_export.h"
 #include "zn/zn_errno.h"

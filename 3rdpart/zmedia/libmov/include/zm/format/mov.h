@@ -3,7 +3,7 @@
 
 /**
  * @file mov.h
- * @brief MP4/MOV/fMP4 的 ZM reader 门面（pull 模式，需要可 seek 的 zm_io）。
+ * @brief MP4/MOV/fMP4 的 ZM reader 接口（pull 模式，需要可 seek 的 zm_io）。
  *
  * 视频样本在 reader 边界统一转成 Annex-B；AAC 保持 raw。
  */
@@ -11,7 +11,7 @@
 #include "zm/core/reader.h"
 #include "zm/core/writer.h"
 
-/* 门面同时导出 MOV 线格式常量（MOV_OBJECT_xxx、MOV_AV_FLAG_xxx）与文件缓冲接口。 */
+/* 接口同时导出 MOV 协议规范常量（MOV_OBJECT_xxx、MOV_AV_FLAG_xxx）与文件缓冲接口。 */
 #include "mov-buffer.h"
 #include "mov-format.h"
 
