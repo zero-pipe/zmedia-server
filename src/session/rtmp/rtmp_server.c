@@ -2,8 +2,8 @@
  * @file rtmp_server.c
  * @brief RTMP 服务端监听：接受连接并创建 session。
  */
-#include "zms/protocol/rtmp/rtmp_server.h"
-#include "zms/protocol/rtmp/session.h"
+#include "zms/session/rtmp/rtmp_server.h"
+#include "zms/session/rtmp/session.h"
 #include "zms/play/dispatch.h"
 #include "session/rtmp/session_internal.h"
 #include "zn/net/tcp_server.h"

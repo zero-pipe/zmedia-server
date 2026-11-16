@@ -33,7 +33,7 @@
 #include "protocol/webrtc/ice_internal.h"
 #include "protocol/webrtc/ice_host.h"
 #include "protocol/webrtc/media_internal.h"
-#include "zms/protocol/webrtc/webrtc_server.h"
+#include "zms/session/webrtc/webrtc_server.h"
 #include "zms/media/media_limits.h"
 #include "zms/media/wire/rtp_packet.h"
 #include "zice/ice-agent.h"

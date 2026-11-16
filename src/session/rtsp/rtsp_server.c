@@ -2,11 +2,11 @@
  * @file rtsp_server.c
  * @brief RTSP 服务端监听与会话创建/销毁。
  */
-#include "zms/protocol/rtsp/rtsp_server.h"
+#include "zms/session/rtsp/rtsp_server.h"
 #include "zms/play/dispatch.h"
 #include "zms/play/play_binding.h"
 #include "session/rtsp/session_internal.h"
-#include "zms/protocol/rtsp/session_auth.h"
+#include "zms/session/rtsp/session_auth.h"
 #include "zms/core/event.h"
 #include "zms/publish/ingest/common/stream_ingest.h"
 #include "zms/core/stream/hub.h"

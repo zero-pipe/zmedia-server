@@ -2,7 +2,7 @@
  * @file device_xml.c
  * @brief 设备协议共用 XML 辅助实现。
  */
-#include "zms/proto/xml.h"
+#include "zms/message/xml.h"
 
 #include <ctype.h>
 #include <stdlib.h>

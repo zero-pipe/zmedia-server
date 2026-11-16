@@ -5,7 +5,7 @@
 #ifndef ZMS_PROTOCOL_HTTP_REQUEST_READER_H
 #define ZMS_PROTOCOL_HTTP_REQUEST_READER_H
 
-#include "zms/proto/msg.h"
+#include "zms/message/msg.h"
 #include "zms/zms_export.h"
 #include "zn/zn_errno.h"
 #include <stddef.h>
@@ -17,7 +17,7 @@ extern "C" {
 /**
  * 一个 HTTP 请求。
  *
- * msg 是统一外壳（见 zms/proto/msg.h）：方法、URL、全部头字段、body 都在里面，
+ * msg 是统一外壳（见 zms/message/msg.h）：方法、URL、全部头字段、body 都在里面，
  * 新增要读的字段不再需要改本结构。下面的旧字段在迁移期保留，等价于 msg 的视图：
  *   method/path/body    ← msg.method / msg.url / msg.body
  * 协议专用字段（Host/Range/Sec-WebSocket-Key/Upgrade）不再有成员，

@@ -22,7 +22,7 @@
 #include "zms/protocol/http/request_reader.h"
 #include "zms/protocol/rtsp/parser.h"
 #include "zms/protocol/rtmp/protocol.h"
-#include "zms/proto/xml.h"
+#include "zms/message/xml.h"
 #include "zn/util/log.h"
 #include "device/gb28181/gb28181_internal.h"
 

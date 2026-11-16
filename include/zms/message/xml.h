@@ -3,12 +3,12 @@
  * @brief 协议消息体用的极简 XML 层：前缀无关查找、文本/属性提取、实体解码。
  *
  * 不做 DOM/XSD 校验，只服务固定消息集（ONVIF SOAP、GB28181 MANSCDP）。
- * 与 zms/proto/msg.h 配合：zms_msg 负责消息外壳，本文件负责 body 的 XML 视图。
+ * 与 zms/message/msg.h 配合：zms_msg 负责消息外壳，本文件负责 body 的 XML 视图。
  */
-#ifndef ZMS_PROTO_XML_H
-#define ZMS_PROTO_XML_H
+#ifndef ZMS_MESSAGE_XML_H
+#define ZMS_MESSAGE_XML_H
 
-#include "zms/proto/msg.h"
+#include "zms/message/msg.h"
 #include "zms/zms_export.h"
 #include <stddef.h>
 
@@ -54,4 +54,4 @@ ZMS_API int zms_msg_xml_get_int(const zms_msg *m, const char *local_name, int de
 ZMS_API int zms_msg_xml_root(const zms_msg *m, const char *const *roots, int root_n, char *out,
                              size_t cap);
 
-#endif /* ZMS_PROTO_XML_H */
+#endif /* ZMS_MESSAGE_XML_H */

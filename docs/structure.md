@@ -38,7 +38,7 @@ src/
                拆分器、解析器、握手、SDP/STUN/DTLS 原语（不含业务）
   session/     协议会话与业务：http / rtmp / rtsp / webrtc 的会话状态机、路由、
                分发、发送节拍与生命周期
-  proto/       跨协议的报文外壳与文档视图：zms_msg（键值视图）、xml 助手
+  message/     跨协议的报文外壳与文档视图：zms_msg（键值视图）、xml 助手
   publish/     推流接入编排：ingest 管线、RTMP/RTP 适配
   play/        播放分发与直播输出：dispatch、play_binding、hls / dash / http_flv
   vod/         点播：文件读取（io/）与 play lane（play/）
@@ -51,6 +51,13 @@ src/
 ```
 
 `include/zms/` 与 `src/` 一一对应（单一头文件树，无 `advanced/`）。
+
+- 服务端会话门面（`*_server.h`、`rtmp/session.h`、`rtsp/session_auth.h`、
+  `webrtc/whep.h`）位于 `include/zms/session/`，对应 `src/session/<proto>/`。
+  对应的 `include/zms/protocol/<proto>/<同名>` 仅保留一行兼容 shim，新代码请用
+  `zms/session/...`。`zms/session.h` 是会话层伞头，`zms/protocol.h` 只留线协议编解码。
+- `src/message/`（原 `src/proto/`）承载跨协议报文外壳与 XML 助手；避免与
+  `src/protocol/` 近名混淆。
 
 ## 3. 加代码时放哪
 

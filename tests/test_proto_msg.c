@@ -2,7 +2,7 @@
  * @file test_proto_msg.c
  * @brief 协议消息外壳：键值视图、大小写不敏感查找、查询串解析、上限与边界。
  */
-#include "zms/proto/msg.h"
+#include "zms/message/msg.h"
 
 #include <stdio.h>
 #include <string.h>

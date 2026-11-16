@@ -20,6 +20,7 @@
 #include "zms/core/stream/hub.h"
 #include "zms/core/event.h"
 #include "zms/protocol.h"
+#include "zms/session.h"
 #include "zms/live.h"
 #include "zms/vod.h"
 #include "zms/player.h"

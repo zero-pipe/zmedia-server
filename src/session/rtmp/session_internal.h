@@ -5,7 +5,7 @@
 #ifndef ZMS_SRC_PROTOCOL_RTMP_SESSION_INTERNAL_H
 #define ZMS_SRC_PROTOCOL_RTMP_SESSION_INTERNAL_H
 
-#include "zms/protocol/rtmp/session.h"
+#include "zms/session/rtmp/session.h"
 #include "zms/protocol/rtmp/protocol.h"
 #include "zms/egress/pipeline/egress_pipeline.h"
 #include "zms/media/container/demux_pipeline.h"

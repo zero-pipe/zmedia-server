@@ -2,11 +2,11 @@
  * @file whip_route.c
  * @brief WHIP（推流）路由。
  */
-#include "zms/protocol/webrtc/whep.h"
+#include "zms/session/webrtc/whep.h"
 #include "zms/protocol/http/route.h"
 #include "zms/protocol/http/session_api.h"
 #include "session/webrtc/session_internal.h"
-#include "zms/protocol/webrtc/webrtc_server.h"
+#include "zms/session/webrtc/webrtc_server.h"
 #include "zms/ops/service/config.h"
 #include "zn/net/tcp_server.h"
 #include "zn/util/log.h"

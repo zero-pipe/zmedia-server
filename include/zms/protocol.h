@@ -17,18 +17,17 @@
 #include "zms/protocol/rtsp/splitter.h"
 #include "zms/protocol/rtsp/sdp.h"
 #include "zms/protocol/rtsp/client.h"
-#include "zms/protocol/rtsp/rtsp_server.h"
 #include "zms/media/wire/rtmp.h"
 #include "zms/media/wire/amf.h"
 #include "zms/protocol/rtmp/protocol.h"
-#include "zms/protocol/rtmp/session.h"
-#include "zms/protocol/rtmp/rtmp_server.h"
 #include "zms/protocol/rtmp/client.h"
 #include "zms/protocol/http/request_reader.h"
-#include "zms/protocol/http/http_server.h"
 #include "zms/protocol/http/flv_client.h"
 #include "zms/protocol/http/hls_client.h"
 #include "zms/protocol/srt/srt_server.h"
 #include "zms/protocol/srt/streamid.h"
 
-#endif /* ZMS_SESSION_H */
+/* 服务端会话门面（*_server.h / session.h / session_auth.h / whep.h）已归位到
+ * zms/session.h 伞头；本头只保留纯线协议编解码。 */
+
+#endif /* ZMS_PROTOCOL_H */

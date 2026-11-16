@@ -2,8 +2,8 @@
  * @file test_proto_xml.c
  * @brief 协议层 XML 文档助手 + MANSCDP 按标签取值。
  */
-#include "zms/proto/msg.h"
-#include "zms/proto/xml.h"
+#include "zms/message/msg.h"
+#include "zms/message/xml.h"
 #include "device/gb28181/gb28181_internal.h"
 
 #include <stdio.h>

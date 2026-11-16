@@ -2,7 +2,7 @@
  * @file msg.c
  * @brief 协议消息外壳实现（零拷贝视图 + 键值查找）。
  */
-#include "zms/proto/msg.h"
+#include "zms/message/msg.h"
 
 #include <stdlib.h>
 #include <string.h>

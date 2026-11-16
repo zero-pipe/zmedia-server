@@ -8,8 +8,8 @@
 #include "zms/device/gb28181/gb28181.h"
 #include "zms/device/gb28181/gb28181_platform.h"
 #include "zms/egress/recorder/egress_mp4_recorder.h"
-#include "zms/protocol/http/http_server.h"
-#include "zms/protocol/rtmp/rtmp_server.h"
+#include "zms/session/http/http_server.h"
+#include "zms/session/rtmp/rtmp_server.h"
 #include "zn/util/log.h"
 
 #include <stdio.h>

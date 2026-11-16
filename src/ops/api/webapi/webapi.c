@@ -9,7 +9,7 @@
 #include "zms/ops/service/config.h"
 #include "zms/ops/service/pull_ssl.h"
 #if defined(ZMS_ENABLE_WEBRTC) && ZMS_ENABLE_WEBRTC
-#include "zms/protocol/webrtc/webrtc_server.h"
+#include "zms/session/webrtc/webrtc_server.h"
 #endif
 #include "zms/util/buf_pool.h"
 #include "zms/version.h"

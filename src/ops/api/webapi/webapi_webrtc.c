@@ -5,7 +5,7 @@
 #include "ops/api/webapi/webapi_internal.h"
 #include "zms/media/media_limits.h"
 #if defined(ZMS_ENABLE_WEBRTC) && ZMS_ENABLE_WEBRTC
-#include "zms/protocol/webrtc/webrtc_server.h"
+#include "zms/session/webrtc/webrtc_server.h"
 #endif
 #include <stddef.h>
 #include <stdlib.h>

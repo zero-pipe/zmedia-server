@@ -5,7 +5,7 @@
 #ifndef ZMS_PROTOCOL_RTSP_PARSER_H
 #define ZMS_PROTOCOL_RTSP_PARSER_H
 
-#include "zms/proto/msg.h"
+#include "zms/message/msg.h"
 #include "zms/zms_export.h"
 #include "zn/zn_errno.h"
 #include "rtsp.h"
@@ -26,7 +26,7 @@ extern "C" {
  * 一条 RTSP 消息。
  *
  * 方法、状态码、版本是 RTSP 专有字段；URL、头字段、body 全部放在统一外壳
- * msg 里（见 zms/proto/msg.h），与 HTTP/SIP 等协议保持同一套访问方式。
+ * msg 里（见 zms/message/msg.h），与 HTTP/SIP 等协议保持同一套访问方式。
  * 头字段与 URL 是消息**自有**的堆副本（原报文缓冲是临时的）。
  */
 typedef struct zms_rtsp_message {

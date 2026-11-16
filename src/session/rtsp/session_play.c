@@ -18,7 +18,7 @@
 #include "zms/core/gop/queue.h"
 #include "zms/media/wire/rtcp.h"
 #include "zms/protocol/rtsp/parser.h"
-#include "zms/protocol/rtsp/session_auth.h"
+#include "zms/session/rtsp/session_auth.h"
 #include "zn/poller/poller.h"
 #include "zn/util/log.h"
 #include <stdio.h>

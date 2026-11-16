@@ -18,7 +18,7 @@
 #include "protocol/webrtc/media_internal.h"
 #include "zms/egress/source/egress_source.h"
 #include "zms/media/media_limits.h"
-#include "zms/protocol/webrtc/webrtc_server.h"
+#include "zms/session/webrtc/webrtc_server.h"
 #include "session/webrtc/play_session.h"
 #include "session/webrtc/whip_ingress.h"
 #include "zms/publish/ingest/common/stream_ingest.h"

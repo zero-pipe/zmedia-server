@@ -2,7 +2,7 @@
  * @file webrtc_server.c
  * @brief WebRTC 服务实例管理。
  */
-#include "zms/protocol/webrtc/webrtc_server.h"
+#include "zms/session/webrtc/webrtc_server.h"
 #include "zms/protocol/http/session_api.h"
 #include "zms/media/media_limits.h"
 #include "zn/net/tcp_server.h"

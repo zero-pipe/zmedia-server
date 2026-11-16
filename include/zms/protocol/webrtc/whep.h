@@ -1,31 +1,6 @@
-/**
- * @file whep.h
- * @brief WHEP（WebRTC 播放）。
- */
+/* 兼容头：实现已归位到 zms/session/webrtc/whep.h（include/ 与 src/ 1:1 镜像）。
+ * 保留一个版本后删除；新代码请直接 include 新路径。 */
 #ifndef ZMS_PROTOCOL_WEBRTC_WHEP_H
 #define ZMS_PROTOCOL_WEBRTC_WHEP_H
-
-#include "zms/zms_export.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-struct zms_http_session;
-struct zms_http_request;
-
-/** WHEP / ZLM webrtc 播放：POST offer SDP，回 201 + answer SDP。DELETE Location 资源以拆除。 */
-ZMS_API void zms_webrtc_whep_handle(struct zms_http_session *hs,
-                                    const struct zms_http_request *req);
-
-/** WHIP 推流：POST offer SDP，回 201 + answer SDP。DELETE Location 资源以拆除。 */
-ZMS_API void zms_webrtc_whip_handle(struct zms_http_session *hs,
-                                    const struct zms_http_request *req);
-
-void zms_webrtc_whep_routes_register(void);
-
-#ifdef __cplusplus
-}
-#endif
-
+#include "zms/session/webrtc/whep.h"
 #endif /* ZMS_PROTOCOL_WEBRTC_WHEP_H */

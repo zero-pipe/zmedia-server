@@ -1,8 +1,8 @@
 # ZMS sources — one list per layer (bindings follow cmake targets).
 
 set(ZMS_CORE_SOURCES
-    src/proto/msg.c
-    src/proto/xml.c
+    src/message/msg.c
+    src/message/xml.c
     src/core/auth.c
     src/core/frame.c
     src/core/stream/url.c

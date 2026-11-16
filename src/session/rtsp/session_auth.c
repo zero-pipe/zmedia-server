@@ -2,7 +2,7 @@
  * @file session_auth.c
  * @brief RTSP 鉴权配置与请求校验。
  */
-#include "zms/protocol/rtsp/session_auth.h"
+#include "zms/session/rtsp/session_auth.h"
 #include "session/rtsp/session_internal.h"
 #include "zms/protocol/rtsp/digest.h"
 #include "zn/util/log.h"

@@ -18,7 +18,7 @@
 #include "protocol/webrtc/media_gateway.h"
 #include "protocol/webrtc/media_internal.h"
 #include "session/webrtc/session_internal.h"
-#include "zms/protocol/webrtc/webrtc_server.h"
+#include "zms/session/webrtc/webrtc_server.h"
 #include "zms/media/codec/codec_id.h"
 #include "zms/egress/pipeline/egress_pipeline.h"
 #include "zms/media/codec/h264/h264_over_rtmp.h"

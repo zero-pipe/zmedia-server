@@ -2,7 +2,7 @@
  * @file session.c
  * @brief RTMP 会话生命周期：TCP 收发、锁与销毁调度。
  */
-#include "zms/protocol/rtmp/session.h"
+#include "zms/session/rtmp/session.h"
 #include "session/rtmp/session_internal.h"
 #include "session/rtmp/session_transport.h"
 #include "publish/rtmp/zm_ingest.h"

@@ -3,7 +3,7 @@
  * @brief RTSP DESCRIBE：查找媒体源并返回 SDP。
  */
 #include "session/rtsp/session_internal.h"
-#include "zms/protocol/rtsp/session_auth.h"
+#include "zms/session/rtsp/session_auth.h"
 #include "zms/core/stream/hub.h"
 #include "zn/util/log.h"
 #include <string.h>

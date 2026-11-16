@@ -17,7 +17,7 @@
 #include "zms/core/stream/hub.h"
 #include "zms/egress/source/egress_source.h"
 #include "zms/play/dispatch.h"
-#include "zms/protocol/webrtc/webrtc_server.h"
+#include "zms/session/webrtc/webrtc_server.h"
 #include "zms/util/buf_pool.h"
 #include "zn/net/tcp_client.h"
 #include "zn/poller/poller_pool.h"

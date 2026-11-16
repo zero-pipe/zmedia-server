@@ -13,8 +13,8 @@
  *   - hdr 存的是**协议元数据**：HTTP 头、RTSP 头、SIP 头、查询参数等，
  *     具体叫什么由各协议解析器决定。
  */
-#ifndef ZMS_PROTO_MSG_H
-#define ZMS_PROTO_MSG_H
+#ifndef ZMS_MESSAGE_MSG_H
+#define ZMS_MESSAGE_MSG_H
 
 #include "zms/zms_export.h"
 #include <stddef.h>
@@ -133,4 +133,4 @@ ZMS_API int zms_kv_copy_value(const zms_kv *kv, char *out, size_t cap);
 }
 #endif
 
-#endif /* ZMS_PROTO_MSG_H */
+#endif /* ZMS_MESSAGE_MSG_H */

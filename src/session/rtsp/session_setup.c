@@ -3,7 +3,7 @@
  * @brief RTSP SETUP：Transport 协商与 TCP/UDP 传输建立。
  */
 #include "session/rtsp/session_internal.h"
-#include "zms/protocol/rtsp/session_auth.h"
+#include "zms/session/rtsp/session_auth.h"
 #include "zn/util/log.h"
 #include <stdio.h>
 #include <stdlib.h>

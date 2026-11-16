@@ -11,7 +11,7 @@
 #include "zms/media/codec/h264/h264_over_rtmp.h"
 #include "zms/core/gop/queue.h"
 #include "zms/core/stream/hub.h"
-#include "zms/protocol/webrtc/webrtc_server.h"
+#include "zms/session/webrtc/webrtc_server.h"
 #include "zms/protocol/rtsp/sdp.h"
 #include "sdp.h"
 #include "sdp_internal.h"

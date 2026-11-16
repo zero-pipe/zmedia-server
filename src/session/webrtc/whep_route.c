@@ -2,7 +2,7 @@
  * @file whep_route.c
  * @brief WHEP（播放）路由。
  */
-#include "zms/protocol/webrtc/whep.h"
+#include "zms/session/webrtc/whep.h"
 #include "zn/platform.h"
 #include "zms/protocol/http/route.h"
 #include "zms/protocol/http/session_api.h"
@@ -12,7 +12,7 @@
 #include "zms/core/stream/hub.h"
 #include "zms/core/codec_filter.h"
 #include "zms/play/dispatch.h"
-#include "zms/protocol/webrtc/webrtc_server.h"
+#include "zms/session/webrtc/webrtc_server.h"
 #include "zms/ops/service/config.h"
 #include "zms/util/buf_pool.h"
 #include "zn/net/tcp_server.h"

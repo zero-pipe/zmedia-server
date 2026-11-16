@@ -2,7 +2,7 @@
  * @file client.c
  * @brief WebRTC 主动连接：WHEP client（拉流）与 WHIP client（推流）。
  */
-#include "zms/protocol/webrtc/webrtc_server.h"
+#include "zms/session/webrtc/webrtc_server.h"
 
 #include "session/webrtc/client_http.h"
 #include "protocol/webrtc/ice_internal.h"
