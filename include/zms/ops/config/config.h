@@ -231,6 +231,10 @@ typedef struct zms_hook_config {
     char on_stream_none_reader[ZMS_CFG_HOOK_URL_MAX];
     char on_play_stop[ZMS_CFG_HOOK_URL_MAX];
     char on_server_started[ZMS_CFG_HOOK_URL_MAX];
+    /** 周期心跳/续注册地址（留空=不发）。上报端口与协议能力，供平台维持节点在线与能力。 */
+    char on_server_keepalive[ZMS_CFG_HOOK_URL_MAX];
+    /** 心跳间隔（秒）；<=0 用默认 30。 */
+    int keepalive_interval_sec;
     /** 直播 MP4 切片落盘通知（对齐 ZLM on_record_mp4） */
     char on_record_mp4[ZMS_CFG_HOOK_URL_MAX];
     /** 留空表示不过滤；rtsp/rtmp */

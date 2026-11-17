@@ -395,7 +395,6 @@ static zn_err_t server_start_services(zms_server *s)
 
     zms_auth_init(&auth_opt);
     zms_webhook_init(s->main_poller, cfg);
-    zms_webhook_server_started(cfg);
 
     lhost = cfg->general.listen_host[0] ? cfg->general.listen_host : "0.0.0.0";
 
@@ -610,6 +609,15 @@ static zn_err_t server_start_services(zms_server *s)
         }
     }
 #endif
+
+    /* 所有监听已就绪、端口确定，向 web 平台自注册并开启心跳续注册。 */
+    {
+        zms_media_server_ports ports;
+
+        server_fill_ports(s, &ports);
+        zms_webhook_server_started(cfg, &ports);
+        zms_webhook_start_keepalive(cfg, &ports);
+    }
 
     return ZN_OK;
 }

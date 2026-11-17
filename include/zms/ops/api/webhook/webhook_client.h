@@ -29,8 +29,21 @@ ZMS_API void zms_webhook_init(zn_poller *poller, const zms_config *cfg);
 /** 关闭：等待在途通知收尾并释放。 */
 ZMS_API void zms_webhook_fini(void);
 
-/** 启动后调用一次（on_server_started） */
-ZMS_API void zms_webhook_server_started(const zms_config *cfg);
+/**
+ * 启动自注册（on_server_started）：把本节点地址、各协议实际监听端口、
+ * 协议能力开关（rtsp/rtmp/hls/srt/webrtc）与 API secret 上报给 web 平台，
+ * 平台据此自动登记媒体节点，无需手工添加。在监听服务起来、端口确定后调用。
+ */
+ZMS_API void zms_webhook_server_started(const zms_config *cfg, const zms_media_server_ports *ports);
+
+/**
+ * 启用心跳/续注册：按 [hook] keepalive_interval_sec 周期向 on_server_keepalive
+ * 上报同样的注册信息。可在平台尚未就绪时用来自愈式补注册。留空地址则不发。
+ */
+ZMS_API void zms_webhook_start_keepalive(const zms_config *cfg,
+                                         const zms_media_server_ports *ports);
+/** 停止心跳（幂等）。 */
+ZMS_API void zms_webhook_stop_keepalive(void);
 
 /** on_stream_changed regist=true */
 ZMS_API void zms_webhook_on_stream_register(zms_media_source *src, zms_media_origin origin);

@@ -332,6 +332,10 @@ static const zms_cfg_field k_hook[] = {
      NULL},
     {"on_server_started", NULL, ZMS_CFG_F_STR, HOFF(on_server_started), HSSZ(on_server_started),
      NULL},
+    {"on_server_keepalive", NULL, ZMS_CFG_F_STR, HOFF(on_server_keepalive),
+     HSSZ(on_server_keepalive), NULL},
+    {"keepalive_interval_sec", "keepaliveIntervalSec", ZMS_CFG_F_INT,
+     HOFF(keepalive_interval_sec), 0, NULL},
     {"on_stream_none_reader", NULL, ZMS_CFG_F_STR, HOFF(on_stream_none_reader),
      HSSZ(on_stream_none_reader), NULL},
     {"on_play_stop", NULL, ZMS_CFG_F_STR, HOFF(on_play_stop), HSSZ(on_play_stop), NULL},
@@ -571,6 +575,7 @@ void zms_config_default(zms_config *cfg)
     cfg->hook.timeout_sec = 10.f;
     cfg->hook.retry_count = 1;
     cfg->hook.retry_delay_sec = 3.f;
+    cfg->hook.keepalive_interval_sec = 30;
     strncpy(cfg->hook.stream_changed_schemas, "rtsp/rtmp/srt/rtp-ps/webrtc",
             sizeof(cfg->hook.stream_changed_schemas) - 1);
 

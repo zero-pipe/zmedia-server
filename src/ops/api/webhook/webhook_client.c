@@ -40,7 +40,7 @@
 /** 通知响应上限：回调只需判断 code/close，1KB 足够。 */
 #define ZMS_HOOK_RESP_MAX 1024
 /** 钩子 URL 主机数上限（通常全部指向同一个后台）。 */
-#define ZMS_HOOK_HOST_MAX 4
+#define ZMS_HOOK_HOST_MAX 8
 
 static zn_poller *g_poller;
 static zms_hook_config g_hook;
@@ -48,6 +48,12 @@ static int g_webhook_initialized;
 static uint64_t g_hook_index;
 static char g_play_host[64];
 static unsigned g_play_http_port;
+
+/* 心跳/续注册：保存注册所需的配置与端口，定时重发完整注册体。 */
+static const zms_config *g_kp_cfg;
+static zms_media_server_ports g_kp_ports;
+static int g_kp_enabled;
+static zn_poller_timer *g_kp_timer;
 
 /** init 阶段解析好的「主机名 → IP」，poller 上只按表连接。 */
 typedef struct zms_hook_host {
@@ -617,33 +623,140 @@ static char *body_alloc(void)
     return (char *)malloc(ZMS_HOOK_BODY_MAX);
 }
 
-void zms_webhook_server_started(const zms_config *cfg)
+/*
+ * 组装自注册/心跳 JSON 体：包含本节点对外地址、各协议实际监听端口、协议能力
+ * 开关与 API secret。camelCase 键与 zero-web-server 的 RegisterRequest 对齐。
+ * 返回 0 成功。
+ */
+static int build_server_info(char *body, size_t cap, const zms_config *cfg,
+                             const zms_media_server_ports *ports)
 {
-    char *body;
+    const char *ip;
+    const char *secret;
     size_t len;
     int n;
+    int enable_srt;
+    int enable_rtsp;
+    int enable_rtmp;
+    int enable_hls;
+    int enable_webrtc;
 
-    if (!g_webhook_initialized || !g_hook.on_server_started[0] || !cfg) {
+    if (!body || !cfg || !ports) {
+        return -1;
+    }
+    ip = cfg->general.extern_ip[0] ? cfg->general.extern_ip : "127.0.0.1";
+    secret = cfg->http.api_secret ? cfg->http.api_secret : "";
+    enable_rtsp = cfg->protocol.enable_rtsp ? 1 : 0;
+    enable_rtmp = cfg->protocol.enable_rtmp ? 1 : 0;
+    enable_hls = cfg->protocol.enable_hls ? 1 : 0;
+    enable_webrtc = cfg->webrtc.enable ? 1 : 0;
+    enable_srt = (cfg->protocol.enable_srt && ports->srt) ? 1 : 0;
+
+    n = snprintf(
+        body, cap,
+        "{\"version\":\"%s\",\"ip\":\"%s\",\"hookIp\":\"%s\",\"sdpIp\":\"%s\","
+        "\"streamIp\":\"%s\",\"secret\":\"%s\","
+        "\"httpPort\":%u,\"httpSslPort\":%u,"
+        "\"rtspPort\":%u,\"rtspSslPort\":%u,"
+        "\"rtmpPort\":%u,\"rtmpSslPort\":%u,"
+        "\"srtPort\":%u,\"webrtcPortMin\":%u,\"webrtcPortMax\":%u,"
+        "\"enableRtsp\":%s,\"enableRtmp\":%s,\"enableHls\":%s,"
+        "\"enableSrt\":%s,\"enableWebrtc\":%s",
+        ZMS_VERSION_STRING, ip, ip, ip, ip, secret, ports->http, cfg->http.ssl_port,
+        ports->rtsp, cfg->rtsp.ssl_port, ports->rtmp, cfg->rtmp.ssl_port, ports->srt,
+        cfg->webrtc.port_min, cfg->webrtc.port_max, enable_rtsp ? "true" : "false",
+        enable_rtmp ? "true" : "false", enable_hls ? "true" : "false",
+        enable_srt ? "true" : "false", enable_webrtc ? "true" : "false");
+    if (n < 0 || (size_t)n >= cap) {
+        return -1;
+    }
+    len = (size_t)n;
+    if (json_append_common(body, cap, &len, ",") != 0) {
+        return -1;
+    }
+    if ((size_t)snprintf(body + len, cap - len, "}") >= cap - len) {
+        return -1;
+    }
+    return 0;
+}
+
+void zms_webhook_server_started(const zms_config *cfg, const zms_media_server_ports *ports)
+{
+    char *body;
+
+    if (!g_webhook_initialized || !g_hook.on_server_started[0] || !cfg || !ports) {
         return;
     }
     body = body_alloc();
     if (!body) {
         return;
     }
-    n = snprintf(body, ZMS_HOOK_BODY_MAX,
-                 "{\"version\":\"%s\",\"rtmp.port\":%u,\"rtsp.port\":%u,\"http.port\":%u",
-                 ZMS_VERSION_STRING, cfg->rtmp.port, cfg->rtsp.port, cfg->http.port);
-    if (n < 0 || (size_t)n >= ZMS_HOOK_BODY_MAX) {
+    if (build_server_info(body, ZMS_HOOK_BODY_MAX, cfg, ports) != 0) {
         free(body);
         return;
     }
-    len = (size_t)n;
-    if (json_append_common(body, ZMS_HOOK_BODY_MAX, &len, ",") != 0 ||
-        (size_t)snprintf(body + len, ZMS_HOOK_BODY_MAX - len, "}") >= ZMS_HOOK_BODY_MAX - len) {
-        free(body);
-        return;
-    }
+    zn_info("[hook] on_server_started -> %s (http=%u rtsp=%u rtmp=%u srt=%u)",
+            g_hook.on_server_started, ports->http, ports->rtsp, ports->rtmp, ports->srt);
     hook_queue(g_hook.on_server_started, body, NULL, 0);
+}
+
+/* 心跳定时回调：发一次注册体并返回下次间隔（毫秒）；关闭后返回 0 自动终止。 */
+static uint64_t keepalive_tick(void *user)
+{
+    char *body;
+    int interval;
+
+    (void)user;
+    if (!g_kp_enabled || !g_webhook_initialized || !g_hook.on_server_keepalive[0] || !g_kp_cfg) {
+        return 0;
+    }
+    body = body_alloc();
+    if (body) {
+        if (build_server_info(body, ZMS_HOOK_BODY_MAX, g_kp_cfg, &g_kp_ports) == 0) {
+            hook_queue(g_hook.on_server_keepalive, body, NULL, 0);
+        } else {
+            free(body);
+        }
+    }
+    interval = g_hook.keepalive_interval_sec > 0 ? g_hook.keepalive_interval_sec : 30;
+    return (uint64_t)interval * 1000u;
+}
+
+static void keepalive_arm(void *user)
+{
+    int interval;
+
+    (void)user;
+    if (!g_kp_enabled || !g_poller) {
+        return;
+    }
+    interval = g_hook.keepalive_interval_sec > 0 ? g_hook.keepalive_interval_sec : 30;
+    g_kp_timer = zn_poller_do_delay(g_poller, (uint64_t)interval * 1000u, keepalive_tick, NULL);
+}
+
+void zms_webhook_start_keepalive(const zms_config *cfg, const zms_media_server_ports *ports)
+{
+    if (!g_webhook_initialized || !cfg || !ports || !g_hook.on_server_keepalive[0]) {
+        return;
+    }
+    g_kp_cfg = cfg;
+    g_kp_ports = *ports;
+    g_kp_enabled = 1;
+    if (g_poller) {
+        (void)zn_poller_async(g_poller, keepalive_arm, NULL, 1);
+    }
+    zn_info("[hook] keepalive started -> %s interval=%ds", g_hook.on_server_keepalive,
+            g_hook.keepalive_interval_sec > 0 ? g_hook.keepalive_interval_sec : 30);
+}
+
+void zms_webhook_stop_keepalive(void)
+{
+    g_kp_enabled = 0;
+    g_kp_cfg = NULL;
+    if (g_kp_timer) {
+        zn_poller_timer_cancel(g_kp_timer);
+        g_kp_timer = NULL;
+    }
 }
 
 void zms_webhook_on_stream_register(zms_media_source *src, zms_media_origin origin)
@@ -870,13 +983,14 @@ void zms_webhook_on_record_mp4(const char *app, const char *stream, const char *
 /** 在 init 线程把每个已配置钩子 URL 的主机名解析成 IP（poller 上不再 DNS）。 */
 static void resolve_hook_hosts(void)
 {
-    const char *urls[5];
+    const char *urls[6];
     int n = 0;
 
     urls[n++] = g_hook.on_stream_changed;
     urls[n++] = g_hook.on_stream_none_reader;
     urls[n++] = g_hook.on_play_stop;
     urls[n++] = g_hook.on_server_started;
+    urls[n++] = g_hook.on_server_keepalive;
     urls[n++] = g_hook.on_record_mp4;
 
     g_host_count = 0;
@@ -955,6 +1069,7 @@ void zms_webhook_init(zn_poller *poller, const zms_config *cfg)
 void zms_webhook_fini(void)
 {
     g_webhook_initialized = 0;
+    zms_webhook_stop_keepalive();
     if (!g_poller) {
         return;
     }
