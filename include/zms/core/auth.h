@@ -84,6 +84,15 @@ ZMS_API void zms_auth_fini(void);
 ZMS_API void zms_auth_set_verifier(zms_auth_verify_fn fn, void *user);
 
 /**
+ * 设置接入 token 白名单（CSV，逗号分隔）。由平台通过 /index/api/auth/tokens 同步。
+ *
+ * 非空：运行期启用推流本地验签——未注册自定义验签实现时用内置的“token 是否在白名单”
+ *       判断；置空：清除白名单并关闭验签（恢复全放行）。
+ * 线程说明：由 WebAPI 处理线程调用，内部整串覆盖写，读取端每次比对时现场切分。
+ */
+ZMS_API void zms_auth_set_tokens(const char *csv);
+
+/**
  * 鉴权入口：同步、无锁、非阻塞，可在任意 poller 线程调用。
  * @param req 请求（必填）
  * @param dec 结论输出；可为 NULL

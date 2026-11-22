@@ -35,6 +35,8 @@ typedef struct zms_webapi_query_map {
     char key[256];
     char kind[16];
     char token[256];
+    /** 接入 token 白名单（CSV，供 /index/api/auth/tokens 同步）。 */
+    char tokens[1024];
     char id[64];
     char rtp_transport[16];
     char proxy_prefix[64];

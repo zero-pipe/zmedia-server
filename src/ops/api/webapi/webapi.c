@@ -127,6 +127,8 @@ static void parse_query(const char *query, zms_webapi_query_map *m)
             strncpy(m->kind, val, sizeof(m->kind) - 1);
         } else if (strcmp(key, "token") == 0) {
             strncpy(m->token, val, sizeof(m->token) - 1);
+        } else if (strcmp(key, "tokens") == 0) {
+            strncpy(m->tokens, val, sizeof(m->tokens) - 1);
         } else if (strcmp(key, "id") == 0) {
             strncpy(m->id, val, sizeof(m->id) - 1);
         } else if (strcmp(key, "key") == 0) {
@@ -470,6 +472,59 @@ size_t webapi_handle_get_webrtc_clients(zms_webapi_json_buf *jb);
 size_t webapi_handle_stop_webrtc_client(const zms_webapi_query_map *q, zms_webapi_json_buf *jb);
 #endif
 
+/* 分组式新路径 → 历史扁平路径的规范映射。
+ * 平台已统一改用 /index/api/<group>/<action>，此处把新路径归一到旧名，
+ * 使分派逻辑与历史别名同时可用（旧路径原样透传）。 */
+typedef struct {
+    const char *grouped;
+    const char *legacy;
+} zms_api_path_alias;
+
+static const zms_api_path_alias g_api_path_aliases[] = {
+    {"/index/api/system/version", "/index/api/version"},
+    {"/index/api/system/health", "/index/api/health"},
+    {"/index/api/system/config", "/index/api/getServerConfig"},
+    {"/index/api/system/api_list", "/index/api/getApiList"},
+    {"/index/api/system/bufpool", "/index/api/getBufPoolStats"},
+    {"/index/api/system/statistic", "/index/api/getStatistic"},
+    {"/index/api/media/list", "/index/api/getMediaList"},
+    {"/index/api/media/info", "/index/api/getMediaInfo"},
+    {"/index/api/media/online", "/index/api/isMediaOnline"},
+    {"/index/api/media/close", "/index/api/close_stream"},
+    {"/index/api/media/close_all", "/index/api/close_streams"},
+    {"/index/api/proxy/add", "/index/api/addStreamProxy"},
+    {"/index/api/proxy/del", "/index/api/delStreamProxy"},
+    {"/index/api/proxy/list", "/index/api/listStreamProxy"},
+    {"/index/api/rtp/open", "/index/api/openRtpServer"},
+    {"/index/api/rtp/connect", "/index/api/connectRtpServer"},
+    {"/index/api/rtp/close", "/index/api/closeRtpServer"},
+    {"/index/api/rtp/list", "/index/api/listRtpServer"},
+    {"/index/api/record/load", "/index/api/loadMP4File"},
+    {"/index/api/record/download", "/index/api/downloadFile"},
+    {"/index/api/record/delete", "/index/api/deleteRecordFile"},
+    {"/index/api/record/seek", "/index/api/seekRecordStamp"},
+    {"/index/api/record/speed", "/index/api/setRecordSpeed"},
+    {"/index/api/webrtc/stats", "/index/api/getWebrtcStats"},
+    {"/index/api/webrtc/capabilities", "/index/api/getWebrtcCapabilities"},
+    {"/index/api/webrtc/client_start", "/index/api/startWebrtcClient"},
+    {"/index/api/webrtc/client_list", "/index/api/getWebrtcClients"},
+    {"/index/api/webrtc/client_stop", "/index/api/stopWebrtcClient"},
+};
+
+static void normalize_api_path(char *path, size_t cap)
+{
+    if (!path || cap == 0) {
+        return;
+    }
+    for (size_t i = 0; i < sizeof(g_api_path_aliases) / sizeof(g_api_path_aliases[0]); ++i) {
+        if (strcmp(path, g_api_path_aliases[i].grouped) == 0) {
+            strncpy(path, g_api_path_aliases[i].legacy, cap - 1);
+            path[cap - 1] = '\0';
+            return;
+        }
+    }
+}
+
 size_t zms_web_api_handle(zn_tcp_session *tcp, const char *method, const char *path_with_query,
                           const zms_web_api_opts *opts, int *http_status, char *body,
                           size_t body_cap)
@@ -488,6 +543,7 @@ size_t zms_web_api_handle(zn_tcp_session *tcp, const char *method, const char *p
     char path[512];
     char query[1024];
     split_path_query(path_with_query, path, sizeof(path), query, sizeof(query));
+    normalize_api_path(path, sizeof(path));
 
     zms_webapi_query_map q;
     memset(&q, 0, sizeof(q));
@@ -502,6 +558,13 @@ size_t zms_web_api_handle(zn_tcp_session *tcp, const char *method, const char *p
     if (!check_secret(tcp, cfg_secret, q.secret)) {
         *http_status = 200;
         return webapi_respond_json(ZMS_API_AUTH_FAILED, "auth failed", NULL, body, body_cap);
+    }
+
+    /* 接入 token 白名单同步：平台把启用中的 token 推到此端点，用于推拉流本地验签。 */
+    if (strcmp(path, "/index/api/auth/tokens") == 0) {
+        *http_status = 200;
+        zms_auth_set_tokens(q.tokens);
+        return webapi_respond_json(0, "success", NULL, body, body_cap);
     }
 
     if (strcmp(path, "/index/api/device/capabilities") == 0) {

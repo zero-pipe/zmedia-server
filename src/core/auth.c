@@ -192,6 +192,93 @@ void zms_auth_fill_peer(zn_tcp_session *tcp, char *ip, size_t cap, unsigned *por
     }
 }
 
+/* ── 内置 token 白名单（平台同步），用于未注册自定义验签实现时的本地比对 ─────── */
+
+#define ZMS_AUTH_TOKEN_LIST_MAX 1024
+
+static char g_tokens[ZMS_AUTH_TOKEN_LIST_MAX]; /* 逗号分隔的启用 token */
+static volatile int g_tokens_ready;
+
+void zms_auth_set_tokens(const char *csv)
+{
+    size_t n;
+
+    if (!csv || !csv[0]) {
+        g_tokens[0] = '\0';
+        g_tokens_ready = 0;
+        g_opt.enable = 0;
+        zn_info("[auth] token list cleared, stream verify disabled");
+        return;
+    }
+    n = strlen(csv);
+    if (n >= sizeof(g_tokens)) {
+        n = sizeof(g_tokens) - 1;
+    }
+    memcpy(g_tokens, csv, n);
+    g_tokens[n] = '\0';
+    g_opt.enable = 1;
+    g_tokens_ready = 1;
+    zn_info("[auth] token list updated (%zu bytes), stream verify enabled", n);
+}
+
+static int token_list_contains(const char *tok)
+{
+    const char *p = g_tokens;
+    size_t tl;
+
+    if (!tok || !tok[0]) {
+        return 0;
+    }
+    tl = strlen(tok);
+    while (*p) {
+        const char *comma = strchr(p, ',');
+        size_t seg = comma ? (size_t)(comma - p) : strlen(p);
+        const char *s = p;
+        size_t sl = seg;
+
+        while (sl && (*s == ' ' || *s == '\t')) {
+            s++;
+            sl--;
+        }
+        while (sl && (s[sl - 1] == ' ' || s[sl - 1] == '\t')) {
+            sl--;
+        }
+        if (sl == tl && strncmp(s, tok, tl) == 0) {
+            return 1;
+        }
+        if (!comma) {
+            break;
+        }
+        p = comma + 1;
+    }
+    return 0;
+}
+
+/* 内置验签：仅对外部“推流”强制 token；播放保持放行，避免影响平台自身观看链路。 */
+static int builtin_verify(const zms_auth_request *req, zms_auth_decision *dec, void *user)
+{
+    char tok[256];
+
+    (void)user;
+    if (!dec) {
+        return -1;
+    }
+    dec->allow = 0;
+    dec->enable_mp4 = 0;
+    if (req->action != ZMS_AUTH_ACTION_PUBLISH) {
+        dec->allow = 1;
+        return 0;
+    }
+    if (!req->params ||
+        zms_auth_param_get(req->params, zms_auth_token_param(), tok, sizeof(tok)) != 0 ||
+        !tok[0]) {
+        dec->allow = 0;
+        return 0;
+    }
+    dec->allow = token_list_contains(tok);
+    return 0;
+}
+
 int zms_auth_check(const zms_auth_request *req, zms_auth_decision *dec)
 {
     zms_auth_decision local;
@@ -202,20 +289,27 @@ int zms_auth_check(const zms_auth_request *req, zms_auth_decision *dec)
     if (!req || !g_opt.enable) {
         return 1;
     }
-    if (!g_verify) {
-        /* 配置了验签却没有实现：fail-closed，且只告警一次，避免刷日志。 */
-        if (!g_warned_no_verifier) {
-            zn_error("[auth] verify enabled but no verifier registered, deny all requests");
-            g_warned_no_verifier = 1;
-        }
-        out->allow = 0;
-        return 0;
-    }
-    out->allow = 0;
-    out->enable_mp4 = 0;
-    if (g_verify(req, out, g_verify_user) != 0) {
+    if (g_verify) {
         out->allow = 0;
         out->enable_mp4 = 0;
+        if (g_verify(req, out, g_verify_user) != 0) {
+            out->allow = 0;
+            out->enable_mp4 = 0;
+        }
+        return out->allow ? 1 : 0;
     }
-    return out->allow ? 1 : 0;
+    if (g_tokens_ready) {
+        if (builtin_verify(req, out, NULL) != 0) {
+            out->allow = 0;
+            out->enable_mp4 = 0;
+        }
+        return out->allow ? 1 : 0;
+    }
+    /* 启用了验签却既无实现又无白名单：fail-closed，只告警一次，避免刷日志。 */
+    if (!g_warned_no_verifier) {
+        zn_error("[auth] verify enabled but no verifier registered, deny all requests");
+        g_warned_no_verifier = 1;
+    }
+    out->allow = 0;
+    return 0;
 }
