@@ -296,7 +296,7 @@ def main():
 
                     # 3) WebAPI 存活（本机 secret 为空时允许访问）
                     try:
-                        status, body = http_get("/index/api/getServerConfig", timeout=4.0,
+                        status, body = http_get("/index/api/system/config", timeout=4.0,
                                                 want_bytes=64)
                         if status == 200 and b"code" in body:
                             print("[smoke] WebAPI OK")

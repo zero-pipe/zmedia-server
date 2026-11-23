@@ -38,7 +38,7 @@ typedef struct zms_web_api_opts {
 /**
  * 处理 /index/api/* 请求。
  * @param method GET/POST
- * @param path_with_query 含 query 的 path，如 /index/api/getMediaList?app=live
+ * @param path_with_query 含 query 的 path，如 /index/api/media/list?app=live
  * @return 写入 body 的字节数；*http_status 为 HTTP 状态码
  */
 ZMS_API size_t zms_web_api_handle(zn_tcp_session *tcp, const char *method,

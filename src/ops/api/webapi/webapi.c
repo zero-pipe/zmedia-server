@@ -391,34 +391,34 @@ static size_t handle_get_api_list(char *body, size_t body_cap)
 {
     return (size_t)snprintf(body, body_cap,
                             "{\"code\":0,\"data\":["
-                            "\"/index/api/getApiList\","
-                            "\"/index/api/version\","
-                            "\"/index/api/health\","
-                            "\"/index/api/getBufPoolStats\","
-                            "\"/index/api/getStatistic\","
-                            "\"/index/api/getWebrtcStats\","
-                            "\"/index/api/getWebrtcCapabilities\","
-                            "\"/index/api/startWebrtcClient\","
-                            "\"/index/api/getWebrtcClients\","
-                            "\"/index/api/stopWebrtcClient\","
-                            "\"/index/api/getServerConfig\","
-                            "\"/index/api/getMediaList\","
-                            "\"/index/api/getMediaInfo\","
-                            "\"/index/api/isMediaOnline\","
-                            "\"/index/api/close_stream\","
-                            "\"/index/api/close_streams\","
-                            "\"/index/api/addStreamProxy\","
-                            "\"/index/api/delStreamProxy\","
-                            "\"/index/api/listStreamProxy\","
-                            "\"/index/api/openRtpServer\","
-                            "\"/index/api/connectRtpServer\","
-                            "\"/index/api/closeRtpServer\","
-                            "\"/index/api/listRtpServer\","
-                            "\"/index/api/loadMP4File\","
-                            "\"/index/api/downloadFile\","
-                            "\"/index/api/deleteRecordFile\","
-                            "\"/index/api/seekRecordStamp\","
-                            "\"/index/api/setRecordSpeed\","
+                            "\"/index/api/system/api_list\","
+                            "\"/index/api/system/version\","
+                            "\"/index/api/system/health\","
+                            "\"/index/api/system/bufpool\","
+                            "\"/index/api/system/statistic\","
+                            "\"/index/api/webrtc/stats\","
+                            "\"/index/api/webrtc/capabilities\","
+                            "\"/index/api/webrtc/client_start\","
+                            "\"/index/api/webrtc/client_list\","
+                            "\"/index/api/webrtc/client_stop\","
+                            "\"/index/api/system/config\","
+                            "\"/index/api/media/list\","
+                            "\"/index/api/media/info\","
+                            "\"/index/api/media/online\","
+                            "\"/index/api/media/close\","
+                            "\"/index/api/media/close_all\","
+                            "\"/index/api/proxy/add\","
+                            "\"/index/api/proxy/del\","
+                            "\"/index/api/proxy/list\","
+                            "\"/index/api/rtp/open\","
+                            "\"/index/api/rtp/connect\","
+                            "\"/index/api/rtp/close\","
+                            "\"/index/api/rtp/list\","
+                            "\"/index/api/record/load\","
+                            "\"/index/api/record/download\","
+                            "\"/index/api/record/delete\","
+                            "\"/index/api/record/seek\","
+                            "\"/index/api/record/speed\","
                             "\"/index/api/onvif/discover\","
                             "\"/index/api/onvif/probe\","
                             "\"/index/api/onvif/add\","
@@ -472,59 +472,6 @@ size_t webapi_handle_get_webrtc_clients(zms_webapi_json_buf *jb);
 size_t webapi_handle_stop_webrtc_client(const zms_webapi_query_map *q, zms_webapi_json_buf *jb);
 #endif
 
-/* 分组式新路径 → 历史扁平路径的规范映射。
- * 平台已统一改用 /index/api/<group>/<action>，此处把新路径归一到旧名，
- * 使分派逻辑与历史别名同时可用（旧路径原样透传）。 */
-typedef struct {
-    const char *grouped;
-    const char *legacy;
-} zms_api_path_alias;
-
-static const zms_api_path_alias g_api_path_aliases[] = {
-    {"/index/api/system/version", "/index/api/version"},
-    {"/index/api/system/health", "/index/api/health"},
-    {"/index/api/system/config", "/index/api/getServerConfig"},
-    {"/index/api/system/api_list", "/index/api/getApiList"},
-    {"/index/api/system/bufpool", "/index/api/getBufPoolStats"},
-    {"/index/api/system/statistic", "/index/api/getStatistic"},
-    {"/index/api/media/list", "/index/api/getMediaList"},
-    {"/index/api/media/info", "/index/api/getMediaInfo"},
-    {"/index/api/media/online", "/index/api/isMediaOnline"},
-    {"/index/api/media/close", "/index/api/close_stream"},
-    {"/index/api/media/close_all", "/index/api/close_streams"},
-    {"/index/api/proxy/add", "/index/api/addStreamProxy"},
-    {"/index/api/proxy/del", "/index/api/delStreamProxy"},
-    {"/index/api/proxy/list", "/index/api/listStreamProxy"},
-    {"/index/api/rtp/open", "/index/api/openRtpServer"},
-    {"/index/api/rtp/connect", "/index/api/connectRtpServer"},
-    {"/index/api/rtp/close", "/index/api/closeRtpServer"},
-    {"/index/api/rtp/list", "/index/api/listRtpServer"},
-    {"/index/api/record/load", "/index/api/loadMP4File"},
-    {"/index/api/record/download", "/index/api/downloadFile"},
-    {"/index/api/record/delete", "/index/api/deleteRecordFile"},
-    {"/index/api/record/seek", "/index/api/seekRecordStamp"},
-    {"/index/api/record/speed", "/index/api/setRecordSpeed"},
-    {"/index/api/webrtc/stats", "/index/api/getWebrtcStats"},
-    {"/index/api/webrtc/capabilities", "/index/api/getWebrtcCapabilities"},
-    {"/index/api/webrtc/client_start", "/index/api/startWebrtcClient"},
-    {"/index/api/webrtc/client_list", "/index/api/getWebrtcClients"},
-    {"/index/api/webrtc/client_stop", "/index/api/stopWebrtcClient"},
-};
-
-static void normalize_api_path(char *path, size_t cap)
-{
-    if (!path || cap == 0) {
-        return;
-    }
-    for (size_t i = 0; i < sizeof(g_api_path_aliases) / sizeof(g_api_path_aliases[0]); ++i) {
-        if (strcmp(path, g_api_path_aliases[i].grouped) == 0) {
-            strncpy(path, g_api_path_aliases[i].legacy, cap - 1);
-            path[cap - 1] = '\0';
-            return;
-        }
-    }
-}
-
 size_t zms_web_api_handle(zn_tcp_session *tcp, const char *method, const char *path_with_query,
                           const zms_web_api_opts *opts, int *http_status, char *body,
                           size_t body_cap)
@@ -543,14 +490,13 @@ size_t zms_web_api_handle(zn_tcp_session *tcp, const char *method, const char *p
     char path[512];
     char query[1024];
     split_path_query(path_with_query, path, sizeof(path), query, sizeof(query));
-    normalize_api_path(path, sizeof(path));
 
     zms_webapi_query_map q;
     memset(&q, 0, sizeof(q));
     parse_query(query, &q);
 
     /* 探活：不要求 secret，便于负载均衡 */
-    if (strcmp(path, "/index/api/health") == 0) {
+    if (strcmp(path, "/index/api/system/health") == 0) {
         return webapi_handle_health(body, body_cap, http_status);
     }
 
@@ -644,13 +590,13 @@ size_t zms_web_api_handle(zn_tcp_session *tcp, const char *method, const char *p
         return webapi_respond_json(ZMS_API_OTHER_FAILED, "unknown onvif endpoint", NULL, body, body_cap);
     }
 
-    if (strcmp(path, "/index/api/getApiList") == 0 || strcmp(path, "/index/") == 0 ||
+    if (strcmp(path, "/index/api/system/api_list") == 0 || strcmp(path, "/index/") == 0 ||
         strcmp(path, "/index") == 0) {
         *http_status = 200;
         return handle_get_api_list(body, body_cap);
     }
 
-    if (strcmp(path, "/index/api/getMediaList") == 0) {
+    if (strcmp(path, "/index/api/media/list") == 0) {
         zms_webapi_json_buf jb = {body, body_cap, 0};
         size_t n = handle_get_media_list(&q, &jb, opts ? opts->cfg : NULL);
         if (n == 0) {
@@ -661,11 +607,11 @@ size_t zms_web_api_handle(zn_tcp_session *tcp, const char *method, const char *p
         return n;
     }
 
-    if (strcmp(path, "/index/api/close_stream") == 0) {
+    if (strcmp(path, "/index/api/media/close") == 0) {
         return handle_close_stream(&q, body, body_cap, http_status);
     }
 
-    if (strcmp(path, "/index/api/getMediaInfo") == 0) {
+    if (strcmp(path, "/index/api/media/info") == 0) {
         zms_webapi_json_buf jb = {body, body_cap, 0};
         size_t n = handle_get_media_info(&q, &jb, opts ? opts->cfg : NULL);
         if (n == 0) {
@@ -676,36 +622,36 @@ size_t zms_web_api_handle(zn_tcp_session *tcp, const char *method, const char *p
         return n;
     }
 
-    if (strcmp(path, "/index/api/close_streams") == 0) {
+    if (strcmp(path, "/index/api/media/close_all") == 0) {
         return handle_close_streams(&q, body, body_cap, http_status);
     }
 
-    if (strcmp(path, "/index/api/isMediaOnline") == 0) {
+    if (strcmp(path, "/index/api/media/online") == 0) {
         return handle_is_media_online(&q, body, body_cap, http_status);
     }
 
-    if (strcmp(path, "/index/api/version") == 0) {
+    if (strcmp(path, "/index/api/system/version") == 0) {
         return handle_version(body, body_cap, http_status);
     }
 
-    if (strcmp(path, "/index/api/getBufPoolStats") == 0) {
+    if (strcmp(path, "/index/api/system/bufpool") == 0) {
         return webapi_handle_buf_pool_stats(body, body_cap, http_status);
     }
 
-    if (strcmp(path, "/index/api/getStatistic") == 0) {
+    if (strcmp(path, "/index/api/system/statistic") == 0) {
         return webapi_handle_statistic(body, body_cap, http_status);
     }
 
 #if defined(ZMS_ENABLE_WEBRTC) && ZMS_ENABLE_WEBRTC
-    if (strcmp(path, "/index/api/getWebrtcStats") == 0) {
+    if (strcmp(path, "/index/api/webrtc/stats") == 0) {
         return webapi_handle_webrtc_stats(body, body_cap, http_status);
     }
 
-    if (strcmp(path, "/index/api/getWebrtcCapabilities") == 0) {
+    if (strcmp(path, "/index/api/webrtc/capabilities") == 0) {
         return webapi_handle_webrtc_capabilities(body, body_cap, http_status);
     }
 
-    if (strcmp(path, "/index/api/startWebrtcClient") == 0) {
+    if (strcmp(path, "/index/api/webrtc/client_start") == 0) {
         zms_webapi_json_buf jb = {body, body_cap, 0};
         size_t n = webapi_handle_start_webrtc_client(&q, &jb, opts ? opts->cfg : NULL);
         if (n == 0) {
@@ -716,7 +662,7 @@ size_t zms_web_api_handle(zn_tcp_session *tcp, const char *method, const char *p
         return n;
     }
 
-    if (strcmp(path, "/index/api/getWebrtcClients") == 0) {
+    if (strcmp(path, "/index/api/webrtc/client_list") == 0) {
         zms_webapi_json_buf jb = {body, body_cap, 0};
         size_t n = webapi_handle_get_webrtc_clients(&jb);
         if (n == 0) {
@@ -727,7 +673,7 @@ size_t zms_web_api_handle(zn_tcp_session *tcp, const char *method, const char *p
         return n;
     }
 
-    if (strcmp(path, "/index/api/stopWebrtcClient") == 0) {
+    if (strcmp(path, "/index/api/webrtc/client_stop") == 0) {
         zms_webapi_json_buf jb = {body, body_cap, 0};
         size_t n = webapi_handle_stop_webrtc_client(&q, &jb);
         if (n == 0) {
@@ -740,19 +686,19 @@ size_t zms_web_api_handle(zn_tcp_session *tcp, const char *method, const char *p
 
 #endif /* ZMS_ENABLE_WEBRTC */
 
-    if (strcmp(path, "/index/api/getServerConfig") == 0) {
+    if (strcmp(path, "/index/api/system/config") == 0) {
         return handle_get_server_config(body, body_cap, http_status);
     }
 
-    if (strcmp(path, "/index/api/addStreamProxy") == 0) {
+    if (strcmp(path, "/index/api/proxy/add") == 0) {
         return webapi_handle_proxy_add(&q, opts, body, body_cap, http_status);
     }
 
-    if (strcmp(path, "/index/api/delStreamProxy") == 0) {
+    if (strcmp(path, "/index/api/proxy/del") == 0) {
         return webapi_handle_proxy_del(&q, body, body_cap, http_status);
     }
 
-    if (strcmp(path, "/index/api/listStreamProxy") == 0) {
+    if (strcmp(path, "/index/api/proxy/list") == 0) {
         zms_webapi_json_buf jb = {body, body_cap, 0};
         size_t n = webapi_handle_proxy_list(&jb);
         if (n == 0) {
@@ -763,19 +709,19 @@ size_t zms_web_api_handle(zn_tcp_session *tcp, const char *method, const char *p
         return n;
     }
 
-    if (strcmp(path, "/index/api/openRtpServer") == 0) {
+    if (strcmp(path, "/index/api/rtp/open") == 0) {
         return webapi_handle_rtp_open(&q, opts, body, body_cap, http_status);
     }
 
-    if (strcmp(path, "/index/api/connectRtpServer") == 0) {
+    if (strcmp(path, "/index/api/rtp/connect") == 0) {
         return webapi_handle_rtp_connect(&q, opts, body, body_cap, http_status);
     }
 
-    if (strcmp(path, "/index/api/closeRtpServer") == 0) {
+    if (strcmp(path, "/index/api/rtp/close") == 0) {
         return webapi_handle_rtp_close(&q, body, body_cap, http_status);
     }
 
-    if (strcmp(path, "/index/api/listRtpServer") == 0) {
+    if (strcmp(path, "/index/api/rtp/list") == 0) {
         zms_webapi_json_buf jb = {body, body_cap, 0};
         size_t n = webapi_handle_rtp_list(&jb);
         if (n == 0) {
@@ -786,24 +732,24 @@ size_t zms_web_api_handle(zn_tcp_session *tcp, const char *method, const char *p
         return n;
     }
 
-    if (strcmp(path, "/index/api/loadMP4File") == 0) {
+    if (strcmp(path, "/index/api/record/load") == 0) {
         return webapi_handle_load_mp4(&q, opts, body, body_cap, http_status);
     }
 
-    if (strcmp(path, "/index/api/deleteRecordFile") == 0) {
+    if (strcmp(path, "/index/api/record/delete") == 0) {
         return webapi_handle_delete_record(&q, body, body_cap, http_status);
     }
 
-    if (strcmp(path, "/index/api/seekRecordStamp") == 0) {
+    if (strcmp(path, "/index/api/record/seek") == 0) {
         return webapi_handle_seek_record(&q, body, body_cap, http_status);
     }
 
-    if (strcmp(path, "/index/api/setRecordSpeed") == 0) {
+    if (strcmp(path, "/index/api/record/speed") == 0) {
         return webapi_handle_record_speed(&q, body, body_cap, http_status);
     }
 
     /* downloadFile 由 HTTP 路由层直接流式发送文件 */
-    if (strcmp(path, "/index/api/downloadFile") == 0) {
+    if (strcmp(path, "/index/api/record/download") == 0) {
         *http_status = 200;
         return webapi_respond_json(ZMS_API_OTHER_FAILED, "use http handler for download", NULL, body,
                             body_cap);

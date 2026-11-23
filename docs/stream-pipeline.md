@@ -89,13 +89,13 @@ Host/`?vhost=` 区分。所有协议共用同一张流表，不允许各协议�
 | HTTP 原生 FLV 文件 | `http://host:8080/{vod}/path/to/{file}.flv` |
 | MP4 直连 | `http://host:8080/{vod}/{file}.mp4` |
 | HLS | `http://host:8080/{vod}/path/to/{file}.m3u8`（+ `.ts` 分片） |
-| 录像回放 | `/index/api/downloadFile`、录像 MP4 路由（`session/http/vod_http_handler.c`） |
+| 录像回放 | `/index/api/record/download`、录像 MP4 路由（`session/http/vod_http_handler.c`） |
 | RTSP / RTMP 点播 | `rtsp://host:8554/{vod}/{file}.mp4` · `rtmp://host:1935/{vod}/{file}.mp4` |
 
 ### 2.3 拉流代理
 
 - 配置：`[proxy] proxy_pull=<远端URL>`、`proxy_app`、`proxy_stream`（留空=沿用远端）。
-- API：`/index/api/addStreamProxy`、`delStreamProxy`、`listStreamProxy`。
+- API：`/index/api/proxy/add`、`proxy/del`、`proxy/list`。
 - 支持拉 `rtsp` / `rtmp` / `srt` / `http-flv`；拉回后与本地推流一样进 GOP 环，可被任意协议播放。
 
 ### 2.4 通用参数

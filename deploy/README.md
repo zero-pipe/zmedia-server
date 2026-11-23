@@ -5,7 +5,7 @@
 | 文件 | 用途 |
 |------|------|
 | `Dockerfile` | 多阶段构建镜像（debian:12-slim，`--build-arg` 控制 WebRTC/SRT） |
-| `docker-compose.yml` | 本地/测试编排，含健康检查（`/index/api/health`）与 fd 上限 |
+| `docker-compose.yml` | 本地/测试编排，含健康检查（`/index/api/system/health`）与 fd 上限 |
 | `zms.service` | systemd unit（`LimitNOFILE`、SIGHUP 重开日志、`NoNewPrivileges`） |
 
 ## Docker

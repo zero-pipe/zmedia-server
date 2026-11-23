@@ -146,7 +146,7 @@ static int try_handle_download_file(zms_http_session *hs, const zms_http_request
         path_only[sizeof(path_only) - 1] = '\0';
         query[0] = '\0';
     }
-    if (strcmp(path_only, "/index/api/downloadFile") != 0) {
+    if (strcmp(path_only, "/index/api/record/download") != 0) {
         return 0;
     }
 
