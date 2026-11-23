@@ -71,3 +71,7 @@ Thumbs.db
 # Local tools / stress scripts (keep on disk, do not commit)
 tools/
 __pycache__
+
+# 本地 AI 引导文件，不入库（保留本地）
+Claude.md
+CLAUDE.md
