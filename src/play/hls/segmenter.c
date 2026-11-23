@@ -17,6 +17,7 @@
 #include "zn/util/buf.h"
 #include "zn/util/log.h"
 #include "zn/util/timer.h"
+#include "zn/poller/poller.h"
 #include "zb/os/sync.h"
 #include "zn/platform.h"
 #include "bridge/zm_zms_bridge.h"
@@ -494,8 +495,49 @@ zms_http_hls_segmenter *zms_http_hls_segmenter_create(zms_media_source *src,
  * 字段，最后在锁外逐个销毁：目的是让可能仍在并发运行的 tick/HTTP 线程看到
  * closing=1 后立即退出，而真正释放 reader/mux 等资源发生在锁外——避免在
  * 持锁时调用会回调进本模块的 destroy（潜在重入/死锁）。
+ *
+ * 跨线程时序：tick 回调绑定在主 poller 线程，而 destroy 常由推流线程
+ * （publish_fini / reregister）调用。`zn_timer_stop` 跨线程只负责取消后续调度，
+ * **已经派发**的 tick 仍会在主 poller 上执行；若此时这里 destroy 掉 rec->mu
+ * 并 free(rec)，回调就会操作已释放的 rec —— 这正是“清流后随机段错误”的另一种
+ * 形态。因此当定时器属于其它正在运行的 poller 时，把真正的清理投递到该 poller
+ * 上执行：tick 回调与 async 任务在同一线程串行，天然不会并发。
  */
+static void hls_segmenter_destroy_now(zms_http_hls_segmenter *rec);
+
+static void hls_segmenter_destroy_deferred(void *user)
+{
+    hls_segmenter_destroy_now((zms_http_hls_segmenter *)user);
+}
+
 void zms_http_hls_segmenter_destroy(zms_http_hls_segmenter *rec)
+{
+    zn_poller *pol;
+
+    if (!rec) {
+        return;
+    }
+    if (rec->timer) {
+        zn_timer_stop(rec->timer);
+        rec->timer = NULL;
+    }
+    pol = rec->timer_poller;
+    if (pol && zn_poller_is_running(pol) && !zn_poller_is_current_thread(pol)) {
+        /* 先把 closing 置位（tick 与 HTTP 路径持 rec->mu 读它），确保在清理任务
+         * 到达前不再产出/服务新数据；真正释放仍在目标 poller 上串行完成。 */
+        if (rec->mu) {
+            zb_mutex_lock(rec->mu);
+            rec->closing = 1;
+            zb_mutex_unlock(rec->mu);
+        }
+        if (zn_poller_async(pol, hls_segmenter_destroy_deferred, rec, 0) == ZN_OK) {
+            return;
+        }
+    }
+    hls_segmenter_destroy_now(rec);
+}
+
+static void hls_segmenter_destroy_now(zms_http_hls_segmenter *rec)
 {
     zms_media_source *src;
     zms_http_hls_playlist *maker;
@@ -536,7 +578,9 @@ void zms_http_hls_segmenter_destroy(zms_http_hls_segmenter *rec)
     if (mu) {
         zb_mutex_lock(mu);
         rec->closing = 1;
-        if (src) {
+        if (src && zms_media_source_segment_rec_get(src, ZMS_SEGMENT_REC_HLS) == rec) {
+            /* 只有 sidecar 里仍是自己时才摘除：延迟销毁期间同名录制器可能已重建，
+             * 此时不能把新录制器从 sidecar 里抹掉。 */
             (void)zms_media_source_segment_rec_set(src, ZMS_SEGMENT_REC_HLS, NULL);
         }
         rec->ts_mux = NULL;
@@ -545,7 +589,7 @@ void zms_http_hls_segmenter_destroy(zms_http_hls_segmenter *rec)
         rec->zm_pkg = NULL;
         rec->reader = NULL;
         zb_mutex_unlock(mu);
-    } else if (src) {
+    } else if (src && zms_media_source_segment_rec_get(src, ZMS_SEGMENT_REC_HLS) == rec) {
         (void)zms_media_source_segment_rec_set(src, ZMS_SEGMENT_REC_HLS, NULL);
     }
 

@@ -22,7 +22,6 @@
 #include "zms/media/codec/h264/h264_es.h"
 #include "zms/media/codec/h265/h265_es.h"
 #include "zms/media/container/flv/flv_tag_probe.h"
-#include "zms/util/buf_pool.h"
 #include "zb/os/sync.h"
 #include "zn/util/buf.h"
 #include "zn/util/mpsc.h"
@@ -310,18 +309,21 @@ static int ring_readers_in_cs(const zms_gop_queue *r)
  * 任一不满足就停在这里，留到下一次提交时再试——**宁可晚释放，不可早释放**，
  * 早释放就是 use-after-free。
  *
- * @param all 1=强制全放（销毁路径，此时已保证没有读者）
+ * @param all 0=按时机释放；1=强制全放（仅销毁路径，已保证无读者）；
+ *            2=无视宽限期但**仍检查读者临界区**（清流路径：旧帧已不再需要，
+ *              但可能有读者刚读到 slot->buf 指针尚未 try_ref）
  */
 static void drain_retired(zms_gop_queue *r, int all)
 {
     while (r->retire_n > 0) {
         size_t at = r->retire[r->retire_head].at;
 
-        if (!all && at + ZMS_GOP_QUEUE_RETIRE_GRACE > r->write_idx) {
+        if (all == 0 && at + ZMS_GOP_QUEUE_RETIRE_GRACE > r->write_idx) {
             break;
         }
-        /* 宽限只防常见情况；读者被调度挂起时可能超过宽限。此时不等待、不释放，留到下次提交。 */
-        if (!all && ring_readers_in_cs(r)) {
+        /* 宽限只防常见情况；读者被调度挂起时可能超过宽限。此时不等待、不释放，留到下次提交。
+         * 只有销毁路径(all=1)才跳过该检查。 */
+        if (all != 1 && ring_readers_in_cs(r)) {
             break;
         }
         zn_buf_unref(r->retire[r->retire_head].buf);
@@ -515,7 +517,9 @@ static size_t beginning_idx(const zms_gop_queue *r)
     if (r->count > 0 && r->write_idx >= r->count) {
         return r->write_idx - r->count;
     }
-    return 0;
+    /* 空环（含刚 clear 后 write_idx 未回退的情况）：起点即当前写位置，
+     * 不能让读者从绝对下标 0 开始扫过一大段已清空的槽位。 */
+    return r->write_idx;
 }
 
 static size_t oldest_idx(const zms_gop_queue *r)
@@ -916,19 +920,32 @@ static zn_err_t ring_commit_frame(zms_gop_queue *r, const zms_frame *frame, zn_b
     return ZN_OK;
 }
 
-static zn_err_t set_blob(uint8_t **dst, size_t *dst_len, size_t *dst_cap, const void *data,
-                          size_t len)
+/*
+ * 写配置到 blob 的非活动缓冲，成功后切换 active（调用方持 mu）。
+ *
+ * 不做堆分配：指针落在队列本体，跨线程借用永不会因更新而 UAF。
+ * 超长配置（> ZMS_GOP_QUEUE_CONFIG_MAX）拒绝并返回 BUFFER_TOO_SMALL：
+ * 真实码流的 SPS/PPS/ASC 远小于 1KB，出现超长说明码流异常，宁可丢配置也不截断。
+ */
+static zn_err_t set_blob(zms_gop_config_blob *blob, const void *data, size_t len)
 {
-    zms_buf_pool_slot_clear(dst, dst_cap);
-    *dst_len = 0;
+    unsigned next;
+
+    if (!blob) {
+        return ZN_ERR_INVALID;
+    }
     if (!data || len == 0) {
+        blob->len = 0; /* 保留 active 缓冲内容，仅置空长度 */
         return ZN_OK;
     }
-    if (!zms_buf_pool_slot_resize(dst, dst_cap, len)) {
-        return ZN_ERR_NOMEM;
+    if (len > sizeof(blob->buf[0])) {
+        return ZN_ERR_BUFFER_TOO_SMALL;
     }
-    memcpy(*dst, data, len);
-    *dst_len = len;
+    next = blob->active ^ 1u;
+    memcpy(blob->buf[next], data, len);
+    blob->len = len;
+    zms_gop_barrier();
+    blob->active = next;
     return ZN_OK;
 }
 
@@ -1030,13 +1047,13 @@ void zms_gop_queue_destroy(zms_gop_queue *r)
     if (!r) {
         return;
     }
+    /* 销毁路径要求调用方已保证没有读者（source unregister 前读者均已 detach）。 */
     for (size_t i = 0; i < ZMS_GOP_QUEUE_CAPACITY; ++i) {
         free_slot(&r->slots[i]);
     }
     drain_retired(r, 1);
     r->bytes = 0;
-    zms_buf_pool_slot_clear(&r->video_config, &r->video_config_cap);
-    zms_buf_pool_slot_clear(&r->audio_config, &r->audio_config_cap);
+    /* 配置为队列内定长双缓冲，随队列一起 free，无需单独释放。 */
     if (r->wake_q) {
         zn_mpsc_destroy(r->wake_q);
     }
@@ -1076,43 +1093,48 @@ void zms_gop_queue_clear(zms_gop_queue *r)
         return;
     }
     zb_mutex_lock(r->mu);
+    /* 清流不是销毁：读者可能仍在其它线程无锁读槽位，必须走 retire 延迟释放，
+     * 不能像早期实现那样 free_slot 立即 unref（那就是 WHEP/WS-FLV/RTSP 播放线程
+     * 随机段错误的根因）。 */
+    /* 先尽量排空旧 retire 槽位，避免下面 512 个新条目把环挤满而触发“丢最旧”的
+     * 立即释放（那样仍可能早释放读者手里的 buf）。 */
+    drain_retired(r, 2);
     for (size_t i = 0; i < ZMS_GOP_QUEUE_CAPACITY; ++i) {
-        free_slot(&r->slots[i]);
+        retire_slot(r, &r->slots[i]);
     }
-    drain_retired(r, 1);
+    /* 清空后不会再有人需要这些旧帧，可无视宽限期释放；但仍以 in_cs 为硬性刹车：
+     * 有读者正处于“已读到 slot->buf 指针、尚未 try_ref”的窗口时留到下次提交再释放。 */
+    drain_retired(r, 2);
     r->bytes = 0;
-    r->write_idx = 0;
-    r->write_seq = 0;
-    r->oldest_seq = 0;
     r->count = 0;
     reset_gop(r);
-    zms_buf_pool_slot_clear(&r->video_config, &r->video_config_cap);
-    r->video_config_len = 0;
-    zms_buf_pool_slot_clear(&r->audio_config, &r->audio_config_cap);
-    r->audio_config_len = 0;
+    /* 关键：不重置 write_idx / write_seq。已挂着的读者 read_idx 是绝对下标，
+     * 归零会让它们“永远等不到数据”而冻结；保持单调后，读者读到的是空槽，
+     * 由 oldest_seq 前移到当前写位置自然完成重定位。 */
+    zms_gop_barrier();
+    r->oldest_seq = r->write_idx;
+    r->video_config.len = 0;
+    r->audio_config.len = 0;
     zb_mutex_unlock(r->mu);
 }
 
+/*
+ * 为一次写入分配缓冲。
+ *
+ * 注意：**不再复用当前写槽位里已有的 buf**。早期实现会在
+ * `slot->buf`（refcnt==1）时直接就地复用，但入站线程拿到该指针后是**在锁外**
+ * memcpy 的；如果此刻另一线程（推流重连/linger 过期/webhook close）执行了
+ * `zms_gop_queue_clear`，`retire_slot` 会把这个 buf unref 掉，入站线程随后
+ * memcpy 就是写已释放内存 —— 这是崩溃的第三个来源。
+ * 现在每次从 buf_pool 取一块，所有权独享；旧的 slot buf 由提交时的
+ * slot_publish→retire_buf 延迟释放，天然与 clear 的 retire 语义一致。
+ */
 zn_buf *zms_gop_queue_alloc_write(zms_gop_queue *r, size_t size)
 {
-    zn_buf *buf = NULL;
-    zms_frame_slot *slot;
-
     if (!r || size == 0) {
         return NULL;
     }
-
-    zb_mutex_lock(r->mu);
-    slot = &r->slots[r->write_idx % ZMS_GOP_QUEUE_CAPACITY];
-    if (slot->buf && zn_buf_cap(slot->buf) >= size && zn_buf_refcnt(slot->buf) == 1) {
-        buf = slot->buf;
-    }
-    zb_mutex_unlock(r->mu);
-
-    if (!buf) {
-        buf = zn_buf_alloc(size);
-    }
-    return buf;
+    return zn_buf_alloc(size);
 }
 
 zn_err_t zms_gop_queue_write(zms_gop_queue *r, const zms_frame *frame)
@@ -1158,8 +1180,7 @@ zn_err_t zms_gop_queue_set_video_config(zms_gop_queue *r, const void *data, size
         return ZN_ERR_INVALID;
     }
     zb_mutex_lock(r->mu);
-    zn_err_t err =
-        set_blob(&r->video_config, &r->video_config_len, &r->video_config_cap, data, len);
+    zn_err_t err = set_blob(&r->video_config, data, len);
     if (err == ZN_OK) {
         r->cache_started = 1;
         r->has_video = 1;
@@ -1174,8 +1195,7 @@ zn_err_t zms_gop_queue_set_audio_config(zms_gop_queue *r, const void *data, size
         return ZN_ERR_INVALID;
     }
     zb_mutex_lock(r->mu);
-    zn_err_t err =
-        set_blob(&r->audio_config, &r->audio_config_len, &r->audio_config_cap, data, len);
+    zn_err_t err = set_blob(&r->audio_config, data, len);
     zb_mutex_unlock(r->mu);
     return err;
 }
@@ -1187,9 +1207,11 @@ const uint8_t *zms_gop_queue_video_config(const zms_gop_queue *r, size_t *len)
     }
     zb_mutex_lock(r->mu);
     if (len) {
-        *len = r->video_config_len;
+        *len = r->video_config.len;
     }
-    const uint8_t *p = r->video_config;
+    /* 指向队列内定长缓冲：队列存活期间始终有效，跨线程借用安全。 */
+    const uint8_t *p = r->video_config.len > 0 ? r->video_config.buf[r->video_config.active]
+                                               : NULL;
     zb_mutex_unlock(r->mu);
     return p;
 }
@@ -1201,25 +1223,26 @@ const uint8_t *zms_gop_queue_audio_config(const zms_gop_queue *r, size_t *len)
     }
     zb_mutex_lock(r->mu);
     if (len) {
-        *len = r->audio_config_len;
+        *len = r->audio_config.len;
     }
-    const uint8_t *p = r->audio_config;
+    const uint8_t *p = r->audio_config.len > 0 ? r->audio_config.buf[r->audio_config.active]
+                                               : NULL;
     zb_mutex_unlock(r->mu);
     return p;
 }
 
-static size_t gop_queue_copy_blob(zms_gop_queue *r, uint8_t **blob, size_t *blob_len, uint8_t *buf,
+static size_t gop_queue_copy_blob(zms_gop_queue *r, const zms_gop_config_blob *blob, uint8_t *buf,
                                   size_t cap)
 {
     size_t n = 0;
 
-    if (!r || !buf || !cap) {
+    if (!r || !blob || !buf || !cap) {
         return 0;
     }
     zb_mutex_lock(r->mu);
-    n = blob_len ? *blob_len : 0;
-    if (blob && *blob && n > 0 && n <= cap) {
-        memcpy(buf, *blob, n);
+    n = blob->len;
+    if (n > 0 && n <= cap) {
+        memcpy(buf, blob->buf[blob->active], n);
     } else {
         n = 0;
     }
@@ -1232,7 +1255,7 @@ size_t zms_gop_queue_copy_video_config(zms_gop_queue *r, uint8_t *buf, size_t ca
     if (!r) {
         return 0;
     }
-    return gop_queue_copy_blob(r, &r->video_config, &r->video_config_len, buf, cap);
+    return gop_queue_copy_blob(r, &r->video_config, buf, cap);
 }
 
 size_t zms_gop_queue_copy_audio_config(zms_gop_queue *r, uint8_t *buf, size_t cap)
@@ -1240,15 +1263,23 @@ size_t zms_gop_queue_copy_audio_config(zms_gop_queue *r, uint8_t *buf, size_t ca
     if (!r) {
         return 0;
     }
-    return gop_queue_copy_blob(r, &r->audio_config, &r->audio_config_len, buf, cap);
+    return gop_queue_copy_blob(r, &r->audio_config, buf, cap);
 }
 
 zms_codec_id zms_gop_queue_audio_codec(const zms_gop_queue *r)
 {
-    if (!r || r->audio_config_len == 0) {
+    zms_codec_id c = ZMS_CODEC_INVALID;
+
+    if (!r) {
         return ZMS_CODEC_INVALID;
     }
-    return zms_flv_tag_audio_codec(r->audio_config, r->audio_config_len);
+    zb_mutex_lock(r->mu);
+    if (r->audio_config.len > 0) {
+        c = zms_flv_tag_audio_codec(r->audio_config.buf[r->audio_config.active],
+                                    r->audio_config.len);
+    }
+    zb_mutex_unlock(r->mu);
+    return c;
 }
 
 zms_gop_reader *zms_gop_reader_attach_beginning(zms_gop_queue *r)

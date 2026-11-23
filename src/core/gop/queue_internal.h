@@ -24,6 +24,23 @@
 /* 待释放环容量：宽限期内条目 <= 单次裁剪最多 CAP + 宽限帧数，取 2*CAP。 */
 #define ZMS_GOP_QUEUE_RETIRE_CAP (2u * ZMS_GOP_QUEUE_CAPACITY)
 
+/* 视频/音频 config 的定长容量（FLV sequence header / AVCC / HVCC / AV1C，实测远小于此值）。 */
+#define ZMS_GOP_QUEUE_CONFIG_MAX 2048u
+
+/*
+ * 配置使用「队列内定长双缓冲」而不是堆指针：
+ *   - set_video_config/set_audio_config 写非活动缓冲再切换 active，读侧拿到的指针
+ *     永远落在队列本体内，生命周期 = 队列本身，**不会**因配置更新/清流被释放；
+ *   - 旧实现返回堆指针，跨线程借用期间一旦 set/clear（每次重连、SPS 重建）就会
+ *     UAF —— 这正是 WHEP/WS-FLV 播放线程随机段错误的第二个来源。
+ *   - 双缓冲让「刚切走的那份」在下一次切换前仍可安全读取，避免撕读。
+ */
+typedef struct zms_gop_config_blob {
+    uint8_t buf[2][ZMS_GOP_QUEUE_CONFIG_MAX];
+    size_t len;
+    unsigned active; /* 当前生效的缓冲下标：0/1 */
+} zms_gop_config_blob;
+
 /** ring / reader 暂存：公开 gop_slot 视图 + 持有的 zn_buf 引用。 */
 typedef struct zms_frame_slot {
     zms_gop_slot pub;
@@ -53,12 +70,8 @@ struct zms_gop_queue {
     int cache_started;
     uint32_t last_ts_v;
     uint32_t last_ts_a;
-    uint8_t *video_config;
-    size_t video_config_len;
-    size_t video_config_cap;
-    uint8_t *audio_config;
-    size_t audio_config_len;
-    size_t audio_config_cap;
+    zms_gop_config_blob video_config;
+    zms_gop_config_blob audio_config;
     int video_key_pos;
     int has_video;
     zms_gop_reader **readers; /* 动态数组，按需扩容 */

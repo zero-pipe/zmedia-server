@@ -6,8 +6,11 @@
  * （zms_media_source_registry_lock/unlock）。但**源对象本身**（zms_media_source）
  * 的媒体数据字段由各自推流/播放线程访问，本文件只在持锁时做链表层面的操作。
  * 因此约定：调用方拿到返回的 source 指针后，链表增删可能让该节点被 free——
- * 但 ZMS 的用法是 source 在 unregister 前一直有效，读者在 detach 时自行注销，
- * 不存在“边用边释放”的野指针窗口。
+ * 但 ZMS 的用法是 source 在 unregister 前一直有效，读者在 detach 时自行注销。
+ * 节点本身会被 free（unregister）或复用（同名重注册），所以**是否有野指针**
+ * 取决于 reader/clear 的同步：gop_queue_clear 走 retire 延迟回收（读者在无锁
+ * 临界区内持有的 slot 不会在脚下被释放），重注册复用节点保证 reader 的 source
+ * 指针不悬空。见 src/core/gop/queue.c 的 clear/retire 与 test_gop_clear_race。
  *
  * 为什么用侵入式链表而非数组：源的数量少（几十路）、增删频繁（推流上下线），
  * 链表 O(1) 插入 + 稳定指针（节点地址即 source 地址）最省心，也便于直接

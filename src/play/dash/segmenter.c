@@ -41,6 +41,7 @@
 #include "webm-vpx.h"
 #include "zn/util/log.h"
 #include "zn/util/timer.h"
+#include "zn/poller/poller.h"
 #include "zb/os/sync.h"
 #include "zm/packager/packager.h"
 #include "bridge/zm_zms_bridge.h"
@@ -770,7 +771,46 @@ zms_http_dash_segmenter *zms_http_dash_segmenter_create(zms_media_source *src,
     return rec;
 }
 
+/*
+ * 销毁。与 HLS 一样存在跨线程时序问题：tick 跑在主 poller 线程，destroy 常在
+ * 推流线程（publish_fini/reregister）调用；`zn_timer_stop` 无法撤回**已派发**
+ * 的回调，若此处立即 free(rec)，在途 tick 会访问已释放内存。因此当定时器属于
+ * 其它正在运行的 poller 时，把清理投递到该 poller 串行执行。
+ */
+static void dash_segmenter_destroy_now(zms_http_dash_segmenter *rec);
+
+static void dash_segmenter_destroy_deferred(void *user)
+{
+    dash_segmenter_destroy_now((zms_http_dash_segmenter *)user);
+}
+
 void zms_http_dash_segmenter_destroy(zms_http_dash_segmenter *rec)
+{
+    zn_poller *pol;
+
+    if (!rec) {
+        return;
+    }
+    if (rec->timer) {
+        zn_timer_stop(rec->timer);
+        rec->timer = NULL;
+    }
+    pol = rec->timer_poller;
+    if (pol && zn_poller_is_running(pol) && !zn_poller_is_current_thread(pol)) {
+        /* 先置 closing，避免清理任务到达前 tick/HTTP 继续推进。 */
+        if (rec->mu) {
+            zb_mutex_lock(rec->mu);
+            rec->closing = 1;
+            zb_mutex_unlock(rec->mu);
+        }
+        if (zn_poller_async(pol, dash_segmenter_destroy_deferred, rec, 0) == ZN_OK) {
+            return;
+        }
+    }
+    dash_segmenter_destroy_now(rec);
+}
+
+static void dash_segmenter_destroy_now(zms_http_dash_segmenter *rec)
 {
     zms_media_source *src;
     zms_http_dash_playlist *maker;
@@ -797,7 +837,8 @@ void zms_http_dash_segmenter_destroy(zms_http_dash_segmenter *rec)
         rec->closing = 1;
         /* closing 置位后，任何在途 tick/HTTP serve 都会在读 mpd/maker 时提前
          * 退出；把指针清空并 detach reader 放到锁内，确保此刻没有线程还在用。 */
-        if (src) {
+        if (src && zms_media_source_segment_rec_get(src, ZMS_SEGMENT_REC_DASH) == rec) {
+            /* 延迟销毁期间同名录制器可能已重建：只摘除自己，避免抹掉新录制器。 */
             (void)zms_media_source_segment_rec_set(src, ZMS_SEGMENT_REC_DASH, NULL);
         }
         rec->maker = NULL;
@@ -807,7 +848,7 @@ void zms_http_dash_segmenter_destroy(zms_http_dash_segmenter *rec)
         rec->zm_mpd = NULL;
         rec->mu = NULL;
         zb_mutex_unlock(mu);
-    } else if (src) {
+    } else if (src && zms_media_source_segment_rec_get(src, ZMS_SEGMENT_REC_DASH) == rec) {
         (void)zms_media_source_segment_rec_set(src, ZMS_SEGMENT_REC_DASH, NULL);
     }
     if (reader) {

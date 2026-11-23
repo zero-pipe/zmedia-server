@@ -122,18 +122,19 @@ ZMS_API zn_err_t zms_gop_queue_set_audio_config(zms_gop_queue *r, const void *da
 /**
  * 取视频配置。
  * @param len 输出长度，可为 NULL
- * @return 借用的内部指针（不转移所有权）；并发写入期间可能失效，跨线程应改用 copy_*。
+ * @return 指向队列内定长双缓冲的指针（队列存活期间始终有效，不会因清流/重推而释放，
+ *         跨线程借用安全）；无配置返回 NULL。并发更新至多让返回值落在上一代缓冲上。
  */
 ZMS_API const uint8_t *zms_gop_queue_video_config(const zms_gop_queue *r, size_t *len);
 /**
  * 取音频配置。
  * @param len 输出长度，可为 NULL
- * @return 借用的内部指针，语义同 video_config（并发下请用 copy_*）。
+ * @return 指向队列内定长双缓冲的指针，语义同 video_config。
  */
 ZMS_API const uint8_t *zms_gop_queue_audio_config(const zms_gop_queue *r, size_t *len);
 
 /**
- * @brief 加锁复制视频配置（避免与并发 set_*_config 产生 UAF）。
+ * @brief 加锁复制视频配置（快照语义；需要“长度与内容严格一致”时使用）。
  * @return 已复制字节数；不可用时为 0。
  */
 ZMS_API size_t zms_gop_queue_copy_video_config(zms_gop_queue *r, uint8_t *buf, size_t cap);

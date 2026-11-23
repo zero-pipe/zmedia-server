@@ -34,6 +34,7 @@ static void push_video(zms_gop_queue *q, uint64_t dts_ms, int keyframe, const ui
 }
 
 static size_t test_time_window(void)
+
 {
     static uint8_t frame[1000];
     zms_gop_queue *q = zms_gop_queue_create();
@@ -111,6 +112,86 @@ static int test_bytes_accounting(void)
     return 0;
 }
 
+/*
+ * 清流不冻结已挂读者：
+ *   读者先消费一部分，随后 clear（推流重连/linger 过期会触发），再写入新帧，
+ *   读者应能继续读到新帧（write 游标不归零、oldest_seq 前移），且不崩溃。
+ */
+static int test_clear_with_live_reader(void)
+{
+    static uint8_t frame[300];
+    zms_gop_queue *q = zms_gop_queue_create();
+    zms_gop_reader *rd;
+    zms_gop_slot slot;
+    int got;
+
+    CHECK(q != NULL);
+    memset(frame, 0x33, sizeof(frame));
+    zms_gop_queue_set_cache_ms(q, 0);
+    zms_gop_queue_set_byte_budget(q, 0);
+
+    push_video(q, 0, 1, frame, sizeof(frame));
+    push_video(q, 40, 0, frame, sizeof(frame));
+
+    rd = zms_gop_reader_attach(q);
+    CHECK(rd != NULL);
+    got = 0;
+    while (zms_gop_reader_read(rd, &slot) > 0) {
+        ++got;
+    }
+    CHECK(got == 2);
+
+    /* 模拟 source_clear：读者仍挂着时清空队列 */
+    zms_gop_queue_clear(q);
+    CHECK(zms_gop_queue_pending_count(q) == 0);
+
+    /* 清流后新码流到达：读者必须能读到，而不是永久返回 0 */
+    push_video(q, 80, 1, frame, sizeof(frame));
+    push_video(q, 120, 0, frame, sizeof(frame));
+    got = 0;
+    while (zms_gop_reader_read(rd, &slot) > 0) {
+        ++got;
+    }
+    CHECK(got == 2);
+
+    zms_gop_reader_detach(rd);
+    zms_gop_queue_destroy(q);
+    return 0;
+}
+
+/* 视频 config 的借用指针在 clear / 重新设置后仍指向队列内缓冲（不再悬空）。 */
+static int test_video_config_pointer_stable(void)
+{
+    static uint8_t cfg1[16];
+    static uint8_t cfg2[16];
+    static uint8_t frame[64];
+    zms_gop_queue *q = zms_gop_queue_create();
+    const uint8_t *p1;
+    const uint8_t *p2;
+    size_t len1 = 0;
+
+    CHECK(q != NULL);
+    memset(cfg1, 0x01, sizeof(cfg1));
+    memset(cfg2, 0x02, sizeof(cfg2));
+    memset(frame, 0x44, sizeof(frame));
+
+    CHECK(zms_gop_queue_set_video_config(q, cfg1, sizeof(cfg1)) == ZN_OK);
+    p1 = zms_gop_queue_video_config(q, &len1);
+    CHECK(p1 != NULL && len1 == sizeof(cfg1));
+    CHECK(p1[0] == 0x01);
+
+    /* 覆盖配置 + 清流后，原指针所属内存不能被释放（仍可安全读取） */
+    CHECK(zms_gop_queue_set_video_config(q, cfg2, sizeof(cfg2)) == ZN_OK);
+    zms_gop_queue_clear(q);
+    CHECK(p1[0] == 0x01); /* 指针有效（内容可能是旧一代，但不崩溃） */
+
+    p2 = zms_gop_queue_video_config(q, &len1);
+    CHECK(p2 == NULL && len1 == 0); /* clear 后没有视频配置 */
+
+    zms_gop_queue_destroy(q);
+    return 0;
+}
+
 int main(void)
 {
     int r;
@@ -122,6 +203,12 @@ int main(void)
         return r;
     }
     if ((r = test_bytes_accounting()) != 0) {
+        return r;
+    }
+    if ((r = test_clear_with_live_reader()) != 0) {
+        return r;
+    }
+    if ((r = test_video_config_pointer_stable()) != 0) {
         return r;
     }
     printf("test_gop_trim: ok\n");

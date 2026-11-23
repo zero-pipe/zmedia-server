@@ -22,6 +22,9 @@ extern "C" {
 
 #define ZMS_VOD_BUFFER_DEFAULT_CAP 512u
 
+/* 点播 config 定长双缓冲容量（与直播 ZMS_GOP_QUEUE_CONFIG_MAX 同量级）。 */
+#define ZMS_VOD_BUFFER_CONFIG_MAX 2048u
+
 typedef struct zms_vod_buffer zms_vod_buffer;
 typedef struct zms_vod_buffer_reader zms_vod_buffer_reader;
 

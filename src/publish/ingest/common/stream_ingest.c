@@ -507,8 +507,8 @@ zn_err_t zms_live_ingest_input_frame(zms_live_ingest *ch, const zms_frame *frame
 /*
  * flv_demux 解出的一帧 → GOP 队列。
  *
- * 拷贝到 gop_queue 分配的 buf（alloc_write 可复用槽位，减少分配），然后走
- * write_frame_buf 交所有权。音频特殊处理：demux 出来的 AAC 可能仍带 ADTS
+ * 拷贝到 gop_queue 分配的新 buf（每次新建，不复用槽位，避免与并发 clear 争用
+ * 同一块内存），然后走 write_frame_buf 交所有权。音频特殊处理：demux 出来的 AAC 可能仍带 ADTS
  * 头，而内部统一用 raw AAC(ASC) 存储，这里就地转 raw 并 memmove 回 buf 头部。
  * rtmp_frame_got 置位用于调用方判断“这一 tag 是否真的产出了帧”。
  */

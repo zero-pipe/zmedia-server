@@ -42,12 +42,15 @@ struct zms_vod_buffer {
     size_t cap;
     uint64_t write_seq;
     uint64_t consumed_seq;
-    uint8_t *video_config;
+    /* config 与直播 gop_queue 一致，使用定长双缓冲：返回给读侧的指针始终落在
+     * 缓冲体内，只会随 point-play 源一起释放；不会因重开/更新配置变成悬空指针
+     * （点播解复用线程写、播放/egress 线程读是跨线程的）。 */
+    uint8_t video_config[2][ZMS_VOD_BUFFER_CONFIG_MAX];
     size_t video_config_len;
-    size_t video_config_cap;
-    uint8_t *audio_config;
+    unsigned video_config_active;
+    uint8_t audio_config[2][ZMS_VOD_BUFFER_CONFIG_MAX];
     size_t audio_config_len;
-    size_t audio_config_cap;
+    unsigned audio_config_active;
     zb_mutex *mtx;
 };
 
@@ -56,20 +59,26 @@ struct zms_vod_buffer_reader {
     uint64_t read_seq;
 };
 
-static int set_blob(uint8_t **buf, size_t *len, size_t *cap, const void *data, size_t data_len)
+/* 写 config 到非活动缓冲再切换（调用方持 mtx），与 gop_queue 的 set_blob 语义一致。 */
+static int set_blob(uint8_t (*bufs)[ZMS_VOD_BUFFER_CONFIG_MAX], unsigned *active, size_t *len,
+                    const void *data, size_t data_len)
 {
-    if (!buf || !len || !cap) {
+    unsigned next;
+
+    if (!bufs || !active || !len) {
         return -1;
     }
     if (data_len == 0) {
         *len = 0;
         return 0;
     }
-    if (!zms_buf_pool_slot_resize(buf, cap, data_len)) {
+    if (data_len > ZMS_VOD_BUFFER_CONFIG_MAX) {
         return -1;
     }
-    memcpy(*buf, data, data_len);
+    next = *active ^ 1u;
+    memcpy(bufs[next], data, data_len);
     *len = data_len;
+    *active = next;
     return 0;
 }
 
@@ -128,8 +137,6 @@ void zms_vod_buffer_destroy(zms_vod_buffer *fifo)
         slot_clear(&fifo->slots[i]);
     }
     free(fifo->slots);
-    free(fifo->video_config);
-    free(fifo->audio_config);
     if (fifo->mtx) {
         zb_mutex_unlock(fifo->mtx);
         zb_mutex_destroy(fifo->mtx);
@@ -206,7 +213,7 @@ zn_err_t zms_vod_buffer_set_video_config(zms_vod_buffer *fifo, const void *data,
         return ZN_ERR_INVALID;
     }
     zb_mutex_lock(fifo->mtx);
-    if (set_blob(&fifo->video_config, &fifo->video_config_len, &fifo->video_config_cap, data,
+    if (set_blob(fifo->video_config, &fifo->video_config_active, &fifo->video_config_len, data,
                  len) != 0) {
         zb_mutex_unlock(fifo->mtx);
         return ZN_ERR_NOMEM;
@@ -221,7 +228,7 @@ zn_err_t zms_vod_buffer_set_audio_config(zms_vod_buffer *fifo, const void *data,
         return ZN_ERR_INVALID;
     }
     zb_mutex_lock(fifo->mtx);
-    if (set_blob(&fifo->audio_config, &fifo->audio_config_len, &fifo->audio_config_cap, data,
+    if (set_blob(fifo->audio_config, &fifo->audio_config_active, &fifo->audio_config_len, data,
                  len) != 0) {
         zb_mutex_unlock(fifo->mtx);
         return ZN_ERR_NOMEM;
@@ -265,7 +272,7 @@ const uint8_t *zms_vod_buffer_video_config(const zms_vod_buffer *fifo, size_t *l
     if (len) {
         *len = fifo->video_config_len;
     }
-    return fifo->video_config_len > 0 ? fifo->video_config : NULL;
+    return fifo->video_config_len > 0 ? fifo->video_config[fifo->video_config_active] : NULL;
 }
 
 const uint8_t *zms_vod_buffer_audio_config(const zms_vod_buffer *fifo, size_t *len)
@@ -276,7 +283,7 @@ const uint8_t *zms_vod_buffer_audio_config(const zms_vod_buffer *fifo, size_t *l
     if (len) {
         *len = fifo->audio_config_len;
     }
-    return fifo->audio_config_len > 0 ? fifo->audio_config : NULL;
+    return fifo->audio_config_len > 0 ? fifo->audio_config[fifo->audio_config_active] : NULL;
 }
 
 size_t zms_vod_buffer_pending(const zms_vod_buffer *fifo)
