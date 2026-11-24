@@ -17,6 +17,8 @@
 #if defined(ZMS_ENABLE_WEBRTC) && ZMS_ENABLE_WEBRTC
 #include "zms/session/webrtc/webrtc_server.h"
 #include "zms/ops/config/pull_ssl.h"
+#include "zms/ops/config/netcheck.h"
+#include "zms/media/media_limits.h"
 #endif
 #include "zn/net/tcp_server.h"
 #include "zn/poller/poller_pool.h"
@@ -345,6 +347,8 @@ zms_http_server *zms_http_server_create(const zms_http_server_opts *opts)
 
 #if defined(ZMS_ENABLE_WEBRTC) && ZMS_ENABLE_WEBRTC
     if (opts->cfg && opts->cfg->webrtc.enable) {
+        /* 并发上限必须在 server_create 之前落到会话注册表。 */
+        zms_webrtc_session_set_limit(opts->cfg->webrtc.max_sessions);
         zms_webrtc_server_opts wopts = {
             .poller = srv->poller,
             .host = opts->host && opts->host[0] ? opts->host : "0.0.0.0",
@@ -386,7 +390,16 @@ zms_http_server *zms_http_server_create(const zms_http_server_opts *opts)
                 zn_warn("WebRTC ICE advertise_host is loopback (%s); remote viewers will not "
                         "connect. Set [general] externIP to this host's LAN/public IP.",
                         adv && adv[0] ? adv : "127.0.0.1");
+            } else if (!zms_netcheck_host_ip_present(adv)) {
+                /* 非回环但不是本机任何网卡：多半是换了网段/搬了机器后没改配置。
+                 * 这种配置不会报错，只会让所有远端浏览器连不上。 */
+                zn_warn("WebRTC: [general] externIP=%s is not an address on this host. "
+                        "ICE candidates will point at a non-existent peer and browsers will "
+                        "fail to connect. Update it to this host's real IP.",
+                        adv);
             }
+            zn_info("WebRTC max sessions=%u (hard cap %u)", (unsigned)zms_webrtc_session_limit(),
+                     (unsigned)ZMS_WEBRTC_SESSION_MAX_HARD);
         }
     }
 #endif

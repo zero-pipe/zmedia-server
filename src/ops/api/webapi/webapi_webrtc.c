@@ -6,8 +6,10 @@
 #include "zms/media/media_limits.h"
 #if defined(ZMS_ENABLE_WEBRTC) && ZMS_ENABLE_WEBRTC
 #include "zms/session/webrtc/webrtc_server.h"
+#include "zms/ops/config/pull_ssl.h"
 #endif
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -15,9 +17,9 @@
 
 size_t webapi_handle_webrtc_stats(char *body, size_t body_cap, int *http_status)
 {
-    /* 每会话统计 ~520B × 64：堆上取，别放 poller 栈。 */
-    zms_webrtc_session_stats *st =
-        (zms_webrtc_session_stats *)calloc(ZMS_WEBRTC_SESSION_MAX, sizeof(*st));
+    /* 每会话统计 ~520B：按当前生效上限分配，堆上取，别放 poller 栈。 */
+    size_t cap = zms_webrtc_session_limit();
+    zms_webrtc_session_stats *st = (zms_webrtc_session_stats *)calloc(cap, sizeof(*st));
     zms_webapi_json_buf jb = {body, body_cap, 0};
     size_t n;
     size_t i;
@@ -29,7 +31,7 @@ size_t webapi_handle_webrtc_stats(char *body, size_t body_cap, int *http_status)
         *http_status = 500;
         return webapi_respond_json(ZMS_API_OTHER_FAILED, "out of memory", NULL, body, body_cap);
     }
-    n = zms_webrtc_session_stats_all(st, ZMS_WEBRTC_SESSION_MAX);
+    n = zms_webrtc_session_stats_all(st, cap);
     if (webapi_jb_append(&jb, "{\"code\":0,\"data\":[") != 0) {
         goto fail;
     }
@@ -119,7 +121,7 @@ size_t webapi_handle_webrtc_capabilities(char *body, size_t body_cap, int *http_
         "\"turnUdp\":true,\"turnTcp\":false,\"turnTls\":false,"
         "\"nack\":true,\"simulcast\":false,\"transcode\":false,"
         "\"maxSessions\":%u}}",
-        (unsigned)ZMS_WEBRTC_SESSION_MAX);
+        (unsigned)zms_webrtc_session_limit());
 }
 
 size_t webapi_handle_start_webrtc_client(const zms_webapi_query_map *q, zms_webapi_json_buf *jb,

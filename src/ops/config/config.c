@@ -209,6 +209,7 @@ static const zms_cfg_field k_webrtc[] = {
     {"enable", NULL, ZMS_CFG_F_BOOL, OFF(webrtc, enable), 0, NULL},
     {"port_min", NULL, ZMS_CFG_F_UINT, OFF(webrtc, port_min), 0, NULL},
     {"port_max", NULL, ZMS_CFG_F_UINT, OFF(webrtc, port_max), 0, NULL},
+    {"max_sessions", "maxSessions", ZMS_CFG_F_UINT, OFF(webrtc, max_sessions), 0, NULL},
     {"stun_server", "stunServer", ZMS_CFG_F_STR, OFF(webrtc, stun_server),
      STSZ(webrtc, stun_server), NULL},
     {"turn_server", "turnServer", ZMS_CFG_F_STR, OFF(webrtc, turn_server),
@@ -625,6 +626,7 @@ void zms_config_default(zms_config *cfg)
     cfg->webrtc.enable = 1;
     cfg->webrtc.port_min = 50000;
     cfg->webrtc.port_max = 60000;
+    cfg->webrtc.max_sessions = 64;
     cfg->webrtc.signaling_enable = 0;
     strncpy(cfg->webrtc.signaling_room, "door-1", sizeof(cfg->webrtc.signaling_room) - 1);
     strncpy(cfg->webrtc.signaling_app, "live", sizeof(cfg->webrtc.signaling_app) - 1);

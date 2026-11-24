@@ -200,6 +200,7 @@ set(ZMS_OPS_SOURCES
     src/ops/config/config.c
     src/ops/server/zms_server.c
     src/ops/config/pull_ssl.c
+    src/ops/config/netcheck.c
     src/ops/api/json/media_json.c
     src/ops/api/webapi/webapi.c
     src/ops/api/webapi/webapi_stats.c

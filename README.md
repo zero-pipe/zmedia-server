@@ -164,7 +164,7 @@ RTMP/HTTP-FLV、VOD FLV 与 RTP ingest 全部走共用媒体模型（ZM）；
 | 能力 | 编译 | 配置 |
 |------|------|------|
 | SRT | `-DZMS_ENABLE_SRT=ON` | `[protocol] enable_srt=1`，`[srt] port=` |
-| WebRTC | `-DZMS_ENABLE_WEBRTC=ON`，并链 OpenSSL | `[webrtc] enable=1`，`[general] externIP=` 填外网能访问到的 IP |
+| WebRTC | **默认已编进去**（依赖内置，无需外部包）；不需要时 `-DZMS_ENABLE_WEBRTC=OFF` | `[webrtc] enable=1`，`[general] externIP=` 填外网能访问到的 IP |
 
 ---
 
@@ -225,7 +225,7 @@ macOS 找不到 OpenSSL 时，加上 `-DOPENSSL_ROOT_DIR="$(brew --prefix openss
 | 选项 | 默认 | 说明 |
 |------|------|------|
 | `ZMS_ENABLE_SRT` | OFF | 打开 SRT（MPEG-TS），需要 libsrt |
-| `ZMS_ENABLE_WEBRTC` | OFF | 打开 WHIP / WHEP |
+| `ZMS_ENABLE_WEBRTC` | ON | 打开 WHIP / WHEP（依赖内置；关闭加 `-DZMS_ENABLE_WEBRTC=OFF`） |
 | `ZMS_WEBRTC_USE_ZICE` | ON | 用仓库里的 zice |
 | `ZMS_SRT_ROOT` | — | SRT 安装前缀（Windows 常用） |
 | `OPENSSL_ROOT_DIR` | Windows 下常能自动找到 | OpenSSL 前缀 |

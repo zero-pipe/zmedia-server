@@ -33,9 +33,15 @@
 #define ZMS_WEBRTC_PLAY_DTLS_IO 2048u
 #define ZMS_WEBRTC_PLAY_H264_STAP_MAX 512u
 
-/** 并发 WHEP/WHIP 会话数与 zice agent→poller 映射容量。 */
-#define ZMS_WEBRTC_SESSION_MAX 64u
-#define ZMS_WEBRTC_ICE_AGENT_MAX 64u
+/** 并发 WHEP/WHIP 会话数与 zice agent→poller 映射容量的**硬上限**。
+ *  实际允许值由 [webrtc] max_sessions 配置决定（缺省 64、上限即此值）；
+ *  会话表是用最大容量一次分配，改这里会同时抬高内存占用（每档约 100B），
+ *  所以日常调并发请改配置而不是改这个宏。 */
+#define ZMS_WEBRTC_SESSION_MAX_HARD 1024u
+/** 未配 [webrtc] max_sessions 时的缺省并发会话数。 */
+#define ZMS_WEBRTC_SESSION_MAX_DEFAULT 64u
+/** ICE agent→poller 反查表容量：与硬上限一致即可覆盖所有会话。 */
+#define ZMS_WEBRTC_ICE_AGENT_MAX ZMS_WEBRTC_SESSION_MAX_HARD
 /** 会话空闲回收：未完成握手 / 长时间无入站流量。 */
 #define ZMS_WEBRTC_SESSION_CONNECT_TIMEOUT_MS 30000u
 #define ZMS_WEBRTC_SESSION_IDLE_TIMEOUT_MS 120000u

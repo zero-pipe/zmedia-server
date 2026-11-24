@@ -60,6 +60,15 @@ typedef struct zms_webrtc_ice_server {
 ZMS_API size_t zms_webrtc_server_ice_servers(zms_webrtc_ice_server *out, size_t cap);
 
 /**
+ * 设置并发 WHEP/WHIP 会话上限（[webrtc] max_sessions）。
+ * 必须在服务创建前调用（启动装配阶段，单线程）；0 表示回退默认值。
+ * 超过编译期硬上限会被夹到硬上限并告警。
+ */
+ZMS_API void zms_webrtc_session_set_limit(unsigned limit);
+/** @return 当前生效的并发会话上限。 */
+ZMS_API size_t zms_webrtc_session_limit(void);
+
+/**
  * 创建 WebRTC 服务并设为全局实例（instance）。poller 必填。
  * 内部会初始化 DTLS/ICE，并按 opts 启动信令与 WHEP/WHIP 主动连接。
  * @return 新服务；opts 或 poller 为空、内存不足返回 NULL。

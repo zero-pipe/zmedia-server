@@ -33,20 +33,56 @@
 #include <string.h>
 
 static unsigned g_webrtc_session_no;
-static zms_webrtc_session *g_webrtc_sessions[ZMS_WEBRTC_SESSION_MAX];
+/* 会话表：按 [webrtc] max_sessions 在注册表首次初始化时一次性分配（默认 64，
+ * 硬上限 ZMS_WEBRTC_SESSION_MAX_HARD）。用堆而非静态数组，是因为并发档位
+ * 相差一个数量级时静态预留会白占内存；表本身指针数组，容量只影响指针大小。 */
+static zms_webrtc_session **g_webrtc_sessions;
+static size_t g_webrtc_session_cap;
 static int g_webrtc_session_count;
 static zb_mutex *g_webrtc_session_mtx;
+/** 配置的并发上限；zms_webrtc_session_set_limit 在启动阶段、注册表使用前设置。 */
+static size_t g_webrtc_session_limit = ZMS_WEBRTC_SESSION_MAX_DEFAULT;
+
+void zms_webrtc_session_set_limit(unsigned limit)
+{
+    if (limit == 0) {
+        limit = ZMS_WEBRTC_SESSION_MAX_DEFAULT;
+    }
+    if (limit > ZMS_WEBRTC_SESSION_MAX_HARD) {
+        zn_warn("[webrtc] max_sessions=%u exceeds hard cap %u; clamped", limit,
+                 (unsigned)ZMS_WEBRTC_SESSION_MAX_HARD);
+        limit = ZMS_WEBRTC_SESSION_MAX_HARD;
+    }
+    g_webrtc_session_limit = limit;
+}
+
+size_t zms_webrtc_session_limit(void)
+{
+    return g_webrtc_session_limit;
+}
 
 static void webrtc_session_registry_init(void)
 {
     if (!g_webrtc_session_mtx) {
         g_webrtc_session_mtx = zb_mutex_create(ZB_MUTEX_NORMAL);
     }
+    if (!g_webrtc_sessions) {
+        /* 容量取配置上限（不超过硬上限）：所有遍历都用 g_webrtc_session_cap 而不是
+         * 编译期宏，避免"配置值 > 表容量"时越界。 */
+        size_t cap = g_webrtc_session_limit;
+        if (cap == 0 || cap > ZMS_WEBRTC_SESSION_MAX_HARD) {
+            cap = ZMS_WEBRTC_SESSION_MAX_HARD;
+        }
+        g_webrtc_sessions = (zms_webrtc_session **)calloc(cap, sizeof(*g_webrtc_sessions));
+        if (g_webrtc_sessions) {
+            g_webrtc_session_cap = cap;
+        }
+    }
 }
 
 static int webrtc_session_registry_full(void)
 {
-    return g_webrtc_session_count >= (int)ZMS_WEBRTC_SESSION_MAX;
+    return !g_webrtc_sessions || g_webrtc_session_count >= (int)g_webrtc_session_limit;
 }
 
 static int webrtc_session_reg_add(zms_webrtc_session *s)
@@ -64,8 +100,8 @@ static int webrtc_session_reg_add(zms_webrtc_session *s)
             return 0;
         }
     }
-    if (g_webrtc_session_count >= (int)ZMS_WEBRTC_SESSION_MAX) {
-        zn_warn("[webrtc] session registry full (max=%u)", (unsigned)ZMS_WEBRTC_SESSION_MAX);
+    if (g_webrtc_session_count >= (int)g_webrtc_session_limit) {
+        zn_warn("[webrtc] session registry full (max=%u)", (unsigned)g_webrtc_session_limit);
         zb_mutex_unlock(g_webrtc_session_mtx);
         return -1;
     }
@@ -293,7 +329,7 @@ zms_webrtc_session *zms_webrtc_session_create(zms_media_source *src, const char 
     zb_mutex_lock(g_webrtc_session_mtx);
     if (webrtc_session_registry_full()) {
         zn_warn("[webrtc] WHEP create rejected: session limit %u",
-                 (unsigned)ZMS_WEBRTC_SESSION_MAX);
+                 (unsigned)g_webrtc_session_limit);
         zb_mutex_unlock(g_webrtc_session_mtx);
         return NULL;
     }
@@ -341,7 +377,7 @@ zms_webrtc_session *zms_webrtc_session_create_publish(const char *vhost, const c
     zb_mutex_lock(g_webrtc_session_mtx);
     if (webrtc_session_registry_full()) {
         zn_warn("[webrtc] WHIP create rejected: session limit %u",
-                 (unsigned)ZMS_WEBRTC_SESSION_MAX);
+                 (unsigned)g_webrtc_session_limit);
         zb_mutex_unlock(g_webrtc_session_mtx);
         return NULL;
     }
@@ -472,21 +508,30 @@ void zms_webrtc_session_destroy(zms_webrtc_session *s)
  * 让表被改动。拷贝+清空的写法保证遍历稳定且锁窗口最小。 */
 void zms_webrtc_session_destroy_all(void)
 {
-    zms_webrtc_session *pending[ZMS_WEBRTC_SESSION_MAX];
+    zms_webrtc_session **pending;
     int n = 0;
     int i;
 
     webrtc_session_registry_init();
+    if (!g_webrtc_sessions) {
+        return;
+    }
+    /* 待删列表按表的实际容量分配：会话数可配置（最大上千），别放栈上。 */
+    pending = (zms_webrtc_session **)calloc(g_webrtc_session_cap, sizeof(*pending));
+    if (!pending) {
+        return;
+    }
     zb_mutex_lock(g_webrtc_session_mtx);
     for (i = 0; i < g_webrtc_session_count; ++i) {
         pending[n++] = g_webrtc_sessions[i];
     }
     g_webrtc_session_count = 0;
-    memset(g_webrtc_sessions, 0, sizeof(g_webrtc_sessions));
+    memset(g_webrtc_sessions, 0, g_webrtc_session_cap * sizeof(*g_webrtc_sessions));
     zb_mutex_unlock(g_webrtc_session_mtx);
     for (i = 0; i < n; ++i) {
         zms_webrtc_session_destroy(pending[i]);
     }
+    free(pending);
 }
 
 int zms_webrtc_session_add_remote_candidates(zms_webrtc_session *s, const char *sdp, size_t len)
@@ -580,15 +625,26 @@ size_t zms_webrtc_session_stats_all(zms_webrtc_session_stats *out, size_t cap)
  */
 void zms_webrtc_session_reap_idle(uint64_t now_ms)
 {
-    zms_webrtc_session *pending[ZMS_WEBRTC_SESSION_MAX];
+    zms_webrtc_session **pending;
+    size_t cap;
     int n = 0;
     int i;
 
-    if (!g_webrtc_session_mtx) {
+    webrtc_session_registry_init();
+    if (!g_webrtc_session_mtx || !g_webrtc_sessions) {
+        return;
+    }
+    cap = g_webrtc_session_cap;
+    if (cap == 0) {
+        return;
+    }
+    /* 锁外分配待删列表：表容量可配置（最大上千），不能放栈上；也不在锁内 calloc。 */
+    pending = (zms_webrtc_session **)calloc(cap, sizeof(*pending));
+    if (!pending) {
         return;
     }
     zb_mutex_lock(g_webrtc_session_mtx);
-    for (i = 0; i < g_webrtc_session_count && n < (int)ZMS_WEBRTC_SESSION_MAX; ++i) {
+    for (i = 0; i < g_webrtc_session_count && (size_t)n < cap; ++i) {
         zms_webrtc_session *s = g_webrtc_sessions[i];
         uint64_t last;
 
@@ -613,6 +669,7 @@ void zms_webrtc_session_reap_idle(uint64_t now_ms)
                  pending[i]->app, pending[i]->stream);
         zms_webrtc_session_destroy(pending[i]);
     }
+    free(pending);
 }
 
 void zms_webrtc_session_on_udp(zms_webrtc_session *s, const char *peer_ip, uint16_t peer_port,

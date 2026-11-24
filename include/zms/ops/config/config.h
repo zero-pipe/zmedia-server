@@ -114,6 +114,8 @@ typedef struct zms_webrtc_config {
     int enable;
     unsigned port_min;
     unsigned port_max;
+    /** 并发 WHEP/WHIP 会话上限；0 = 用默认 64，超过编译期硬上限会被夹住。 */
+    unsigned max_sessions;
     /** 可选 STUN/TURN：host:port（支持 stun:/turn: 前缀）。 */
     char stun_server[128];
     char turn_server[128];
